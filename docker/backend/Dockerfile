@@ -40,7 +40,7 @@ COPY . .
 # 設置環境變量
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+    PORT=8001
 
 # 修改目錄權限
 RUN chown -R appuser:appgroup /app
@@ -49,11 +49,11 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # 暴露端口
-EXPOSE 8000
+EXPOSE 8001
 
 # 健康檢查
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost:8000/health/ || exit 1
+    CMD curl -f http://localhost:8001/health/ || exit 1
 
 # 啟動應用
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120", "app.wsgi:application"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "120", "app.wsgi:application"] 
