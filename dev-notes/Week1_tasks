@@ -1,0 +1,115 @@
+# ChronoChem：第一週工作清單
+
+## 🗂 專案目錄架構（初版）
+
+```
+project-root/
+│── docker/                 # Docker 相關設定
+│   ├── backend.Dockerfile  # Django 後端的 Dockerfile
+│   ├── frontend.Dockerfile # Vue 前端的 Dockerfile
+│   ├── docker-compose.yml  # Docker Compose 設定檔
+│   └── .env                # 環境變數 (backend、frontend 共用)
+│
+│── backend/                # Django 後端
+│   ├── config/             # Django 設定檔 (settings, urls, wsgi)
+│   ├── api/                # 核心 API 應用程式
+│   │   ├── models.py       # Django ORM 模型 (歷史事件、化學家、實驗)
+│   │   ├── serializers.py  # DRF 序列化
+│   │   ├── views.py        # API 視圖 (處理請求)
+│   │   ├── urls.py         # API 路由
+│   │   ├── tests.py        # 測試
+│   │   ├── admin.py        # Django Admin 設定
+│   │   ├── tasks.py        # 非同步任務 (Celery / Django Q)
+│   │   └── utils.py        # 共用工具函式
+│   ├── static/             # 靜態文件 (CSS, JS)
+│   ├── media/              # 媒體檔案 (上傳圖片、3D 模型)
+│   ├── db.sqlite3          # 本地開發資料庫 (正式環境為 PostgreSQL)
+│   ├── manage.py           # Django 管理指令
+│   ├── requirements.txt    # Python 依賴
+│   └── gunicorn.conf.py    # Gunicorn 設定 (若使用)
+│
+│── frontend/               # Vue3 + Three.js 前端
+│   ├── public/             # 公共資源 (favicon, index.html)
+│   ├── src/                # 核心 Vue 應用
+│   │   ├── assets/         # 靜態資源 (圖片, CSS, 3D 模型)
+│   │   ├── components/     # Vue 組件 (3D 界面、按鈕、歷史對話 UI)
+│   │   ├── views/          # 頁面 (時間旅行場景, 歷史場景)
+│   │   ├── router/         # Vue Router (時光機導航)
+│   │   ├── store/          # Pinia 狀態管理
+│   │   ├── api/            # 前端 API 請求 (使用 axios)
+│   │   ├── utils/          # 通用函式
+│   │   ├── App.vue         # 主應用組件
+│   │   ├── main.ts         # 入口文件
+│   │   └── threejs/        # Three.js 相關邏輯 (載入 3D 環境)
+│   ├── tsconfig.json       # TypeScript 設定
+│   ├── vite.config.ts      # Vite 設定
+│   ├── package.json        # 前端依賴
+│   └── postcss.config.js   # CSS 處理設定
+│
+│── docs/                   # 文件
+│   ├── README.md           # 專案說明
+│   ├── API_DOCS.md         # API 設計文件
+│   ├── ARCHITECTURE.md     # 架構設計
+│   ├── DEPLOYMENT.md       # 部署指南
+│   └── DEV_GUIDE.md        # 開發指南
+│
+│── .gitignore              # Git 忽略文件
+│── .prettierrc             # Prettier 設定 (前端格式化)
+│── .eslintrc.js            # ESLint 設定 (前端代碼規範)
+│── .flake8                 # Flake8 設定 (後端代碼規範)
+│── .editorconfig           # 編輯器格式化設定
+└── LICENSE                 # 授權條款
+```
+
+---
+
+## ✅ 第一週任務拆解：ChronoChem MVP
+
+### 🔧 Django 後端
+1. 初始化虛擬環境與 Django 專案
+   - 安裝：`pip install django djangorestframework psycopg2-binary`
+   - 建立專案：`django-admin startproject config` → 搬到 `backend/config/`
+   - 建立應用程式：`python manage.py startapp api`
+2. 設定 PostgreSQL 與 DRF
+   - 在 `settings.py` 設定資料庫與 REST Framework
+3. 設計模型
+   - Era：年、標題、描述
+   - Scientist：姓名、貢獻、所屬時代 (FK)
+   - Event：標題、時間、地點、描述、關聯化學家 (M2M)、關聯時代 (FK)
+4. 建立 API
+   - 編寫 serializers.py
+   - 使用 ViewSet 提供 CRUD
+   - 在 urls.py 中註冊路由 `/api/eras/`、`/api/scientists/`、`/api/events/`
+5. 使用 Django Admin 建立測試資料
+6. 使用 Postman / curl 測試 API 是否正常
+
+---
+
+### 🎨 Vue3 + Three.js 前端
+1. 初始化專案（放置於 frontend/）
+   - `npm create vite@latest chrono-chem --template vue-ts`
+   - `npm install` 安裝依賴
+   - 安裝 Vue Router、Pinia、Three.js、GLTFLoader 等套件
+2. 設定 Vue Router
+   - 設計 `/era/:id` 路由對應歷史場景
+   - 建立 EraView.vue 作為場景頁面
+3. 整合 Three.js 與 OrbitControls
+   - 在 `threejs/scene.ts` 建立基本場景初始化邏輯
+   - 載入 GLTF 模型測試：`priestley_lab.glb`
+4. 設計時光機 UI（側邊欄或懸浮按鈕）
+   - 列出多個時代讓使用者選擇
+   - 使用 `router.push('/era/1869')` 切換場景頁面
+5. 與後端 API 串接（axios）
+   - 建立 `api/index.ts`，撈取 `/api/eras/` 資料來生成選單
+
+---
+
+## 🎯 第一週預期成果
+
+- ✅ Django API 提供 Era、Event、Scientist 三種資源（含資料模型與基本資料）
+- ✅ Vue3 能透過 Router 切換 `/era/:id` 頁面，並對應不同 3D 場景
+- ✅ 成功載入 Three.js 場景與至少一組 GLTF 模型
+- ✅ 前端能顯示「時光機 UI」來操作不同時代的切換
+
+---
+

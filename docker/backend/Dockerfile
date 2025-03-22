@@ -52,8 +52,8 @@ USER appuser
 EXPOSE 8001
 
 # 健康檢查
-HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost:8001/health/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+    CMD curl -f http://localhost:8001/api/health/ || exit 1
 
 # 啟動應用
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "120", "app.wsgi:application"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "120", "config.wsgi:application"] 
