@@ -1,0 +1,49 @@
+# 依賴目錄
+node_modules/
+venv/
+.env/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# 構建輸出
+dist/
+build/
+*.egg-info/
+coverage/
+.next/
+out/
+
+# IDE 和編輯器
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 環境文件
+.env
+.env.local
+.env.*.local
+
+# 日誌文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 測試覆蓋率
+.coverage
+htmlcov/
+
+# 臨時文件
+*.tmp
+*.temp
+.cache/
+
+# 系統文件
+.DS_Store
+.directory
+.Spotlight-V100
+.Trashes 
