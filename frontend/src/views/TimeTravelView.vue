@@ -1,6 +1,7 @@
 <template>
   <div class="time-travel-view">
     <div ref="sceneContainer" class="scene-container"></div>
+
     <div class="controls">
       <button @click="navigateToEra(currentEra - 1)" :disabled="currentEra <= 1">上一個時代</button>
       <div class="era-info">
@@ -9,9 +10,46 @@
       </div>
       <button @click="navigateToEra(currentEra + 1)" :disabled="currentEra >= totalEras">下一個時代</button>
     </div>
+
+    <div class="era-data-toggle" @click="showPanel = !showPanel">
+      {{ showPanel ? '📘 隱藏資訊' : '📖 顯示資訊' }}
+    </div>
+
+    <Transition name="slide">
+      <div class="era-data-panel" v-if="showPanel && (events.length > 0 || scientists.length > 0)">
+        <div v-if="events.length > 0">
+          <h3>🔬 相關事件 ({{ events.length }})</h3>
+          <ul>
+            <li v-for="event in events" :key="event.id">
+              <strong>{{ event.title }}</strong>
+              <div class="event-details">
+                <span>📅 {{ event.year }}年</span>
+                <span>📍 {{ event.location }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div v-if="scientists.length > 0">
+          <h3>👩‍🔬 化學家</h3>
+          <ul>
+            <li v-for="scientist in scientists" :key="scientist.id">
+              <strong>{{ scientist.name }}</strong>
+              <div class="scientist-years">
+                {{ scientist.birth_year }} - {{ scientist.death_year }}
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </Transition>
+
     <div class="loading" v-if="isLoading">
       <div class="spinner"></div>
       <span>載入中...</span>
+    </div>
+
+    <div class="error-message" v-if="error">
+      {{ error }}
     </div>
   </div>
 </template>
@@ -21,6 +59,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Scene } from '@/threejs/scene';
 import { useRouter } from 'vue-router';
 import { eras } from '@/config/eras';
+import { fetchEras, fetchEvents, fetchScientists } from '@/api';
 
 const router = useRouter();
 const sceneContainer = ref<HTMLElement | null>(null);
@@ -28,18 +67,39 @@ const currentEra = ref(1);
 const isLoading = ref(false);
 const totalEras = eras.length;
 
+interface Event {
+  id: number;
+  title: string;
+  year: number;
+  location: string;
+}
+
+interface Scientist {
+  id: number;
+  name: string;
+  birth_year: number;
+  death_year: number;
+}
+
+const events = ref<Event[]>([]);
+const scientists = ref<Scientist[]>([]);
+const showPanel = ref(true);
 const currentEraData = computed(() => {
   return eras.find(era => era.id === currentEra.value);
 });
 
 let scene: Scene | null = null;
+const error = ref<string>('');
 
-onMounted(() => {
+onMounted(async () => {
   if (sceneContainer.value) {
     scene = new Scene(sceneContainer.value);
-    loadEraModel(currentEra.value);
+    await loadEraModel(currentEra.value);
     window.addEventListener('resize', handleResize);
   }
+
+  const response = await fetchEras();
+  console.log('時代資料：', response.data);
 });
 
 onUnmounted(() => {
@@ -52,20 +112,24 @@ const handleResize = () => {
 };
 
 const loadEraModel = async (eraId: number) => {
+  error.value = '';  // 重置錯誤訊息
   const era = eras.find(e => e.id === eraId);
-  if (scene && era) {
-    isLoading.value = true;
-    try {
-      scene.loadModel(
-        era.modelPath,
-        era.modelScale,
-        era.cameraPosition
-      );
-    } catch (error) {
-      console.error('Error loading model:', error);
-    } finally {
-      isLoading.value = false;
-    }
+  if (!scene || !era) return;
+
+  isLoading.value = true;
+  try {
+    await scene.loadModel(era.modelPath, era.modelScale, era.cameraPosition);
+    const [eventsRes, scientistsRes] = await Promise.all([
+      fetchEvents(eraId),
+      fetchScientists(eraId),
+    ]);
+    events.value = eventsRes.data as Event[];
+    scientists.value = scientistsRes.data as Scientist[];
+  } catch (err) {
+    error.value = '載入資料時發生錯誤，請稍後再試';
+    console.error('載入錯誤:', err);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -100,8 +164,10 @@ const navigateToEra = (eraId: number) => {
   display: flex;
   gap: 1rem;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 1rem;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 1.2rem 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -172,5 +238,132 @@ button:disabled {
   to {
     transform: rotate(360deg);
   }
+}
+
+.era-data-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: #42b883;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.era-data-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.era-data-panel {
+  position: fixed;
+  top: 3.2rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 12px;
+  padding: 1.8rem;
+  width: 380px;  /* 固定寬度 */
+  max-height: calc(100vh - 10rem);
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.era-data-panel h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #42b883;
+  padding-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.era-data-panel ul {
+  list-style: disc;
+  padding-left: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.era-data-panel li {
+  padding: 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(66, 184, 131, 0.1);
+}
+
+.era-data-panel li:hover {
+  background: rgba(66, 184, 131, 0.05);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+.event-details {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.4rem;
+  display: flex;
+  gap: 1.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.scientist-years {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.error-message {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 87, 87, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  z-index: 30;
+}
+
+/* 添加滾動條樣式 */
+.era-data-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.era-data-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.era-data-panel::-webkit-scrollbar-thumb {
+  background: rgba(66, 184, 131, 0.5);
+  border-radius: 3px;
 }
 </style>
