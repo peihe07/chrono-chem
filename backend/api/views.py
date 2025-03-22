@@ -19,6 +19,10 @@ class ScientistListView(generics.ListAPIView):
             return Scientist.objects.filter(era_id=era_id)
         return Scientist.objects.all()
 
+class ScientistDetailView(generics.RetrieveAPIView):
+    queryset = Scientist.objects.all()
+    serializer_class = ScientistSerializer
+
 class EventListView(generics.ListAPIView):
     serializer_class = EventSerializer
 

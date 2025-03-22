@@ -18,6 +18,6 @@ services:
       - ./backend:/app
     environment:
       - DEBUG=1
-      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DJANGO_SETTINGS_MODULE=config.settings
     ports:
       - "8000:8000" 
