@@ -1,49 +1,77 @@
-# 依賴目錄
-node_modules/
-venv/
-.env/
-__pycache__/
-.pytest_cache/
-*.pyc
-
-# 構建輸出
-dist/
-build/
-*.egg-info/
-coverage/
-.next/
-out/
-
-# IDE 和編輯器
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# 環境文件
-.env
-.env.local
-.env.*.local
-
-# 日誌文件
+# Logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# 測試覆蓋率
-.coverage
-htmlcov/
+# 前端相關
+node_modules/
+dist/
+dist-ssr/
+*.local
 
-# 臨時文件
-*.tmp
-*.temp
-.cache/
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 後端相關
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django 特定
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+
+# 環境文件
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE 配置
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # 系統文件
 .DS_Store
-.directory
-.Spotlight-V100
-.Trashes 
+Thumbs.db
