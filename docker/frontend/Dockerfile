@@ -7,8 +7,7 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # 複製 package 文件
-COPY package.json ./
-COPY package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # 安裝依賴
 RUN npm install
@@ -16,8 +15,19 @@ RUN npm install
 # 複製源代碼
 COPY . .
 
-# 構建應用
+# 建議先進行類型檢查
+RUN npm run type-check
+# 然後再建置
 RUN npm run build
+
+# 或者暫時跳過類型檢查
+RUN npm run build-skip-ts
+
+# 更新 vue-tsc 到最新版本
+RUN npm install vue-tsc@latest
+
+# 確保 typescript 版本相容
+RUN npm install typescript@latest
 
 # 生產階段
 FROM node:18-alpine
