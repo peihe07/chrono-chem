@@ -1,6 +1,6 @@
 <template>
   <div class="era-view">
-    <h1>Era {{ id }}</h1>
+    <h1>化學時代</h1>
     <div class="content">
       <div class="scientists">
         <h2>Scientists</h2>
@@ -58,7 +58,7 @@ onMounted(async () => {
 
 <style scoped>
 .era-view {
-  padding: 2rem;
+  padding: 20px;
 }
 
 .content {

@@ -3,6 +3,8 @@ from .models import Era, Scientist, Event
 from .serializers import EraSerializer, ScientistSerializer, EventSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+from rest_framework import status
 
 class EraListView(generics.ListAPIView):
     queryset = Era.objects.all().order_by('year')
@@ -31,5 +33,15 @@ class ScientistChatView(APIView):
     def get(self, request, pk):
         scientist = Scientist.objects.get(pk=pk)
         return Response({
-            "message": f"Hello, I’m {scientist.name}. I contributed to the field of chemistry during the {scientist.era.title} era."
+            "message": f"Hello, I'm {scientist.name}. I contributed to the field of chemistry during the {scientist.era.title} era."
         })
+
+@api_view(['GET'])
+def health_check(request):
+    """
+    健康檢查端點
+    """
+    return Response(
+        {"status": "healthy"},
+        status=status.HTTP_200_OK
+    )

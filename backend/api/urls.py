@@ -1,9 +1,9 @@
 from django.urls import path
-from . import views
+from .views import health_check, EraListView, ScientistListView, ScientistDetailView
 
 urlpatterns = [
-    path('eras/', views.EraListView.as_view(), name='era-list'),
-    path('scientists/', views.ScientistListView.as_view(), name='scientist-list'),
-    path('events/', views.EventListView.as_view(), name='event-list'),
-    path('scientist/<int:pk>/chat/', views.ScientistChatView.as_view(), name='scientist-chat'),
+    path('health/', health_check, name='health_check'),
+    path('eras/', EraListView.as_view(), name='era-list'),
+    path('scientists/', ScientistListView.as_view(), name='scientist-list'),
+    path('scientists/<int:pk>/', ScientistDetailView.as_view(), name='scientist-detail'),
 ]
