@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import TimeMachine from './components/TimeMachine.vue'
 </script>
 
 <template>
   <header>
-    <nav>
-      <router-link to="/era/1">1774</router-link> |
-      <router-link to="/era/2">1869</router-link> |
-      <router-link to="/era/3">1898</router-link>
-    </nav>
+    <TimeMachine />
   </header>
 
   <RouterView />
@@ -20,6 +17,10 @@ import { RouterView } from 'vue-router'
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+}
+
+header {
+  padding: 1rem 0;
 }
 
 nav {

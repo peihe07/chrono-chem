@@ -19,7 +19,7 @@
   const router = useRouter()
   
   function goToEra(year: number) {
-    router.push(`/time/${year}`)
+    router.push(`/era/${year}`)
   }
   </script>
   
