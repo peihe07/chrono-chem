@@ -1,6 +1,12 @@
+<!-- TimeMachine.vue -->
 <template>
     <div class="time-machine">
-      <button v-for="era in eras" :key="era.id" @click="goToEra(era.id)">
+      <button
+        v-for="era in eras"
+        :key="era.id"
+        class="era-btn"
+        @click="goToEra(era.id)"
+      >
         {{ era.title }}
       </button>
     </div>
@@ -11,7 +17,23 @@
   import { eras } from '@/config/eras'
   
   const router = useRouter()
-  const goToEra = (year: number) => {
+  
+  function goToEra(year: number) {
     router.push(`/time/${year}`)
   }
   </script>
+  
+  <style scoped>
+  .time-machine {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .era-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #aaa;
+    border-radius: 8px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+  }
+  </style>
