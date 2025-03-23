@@ -5,9 +5,9 @@ import { RouterView } from 'vue-router'
 <template>
   <header>
     <nav>
-      <router-link to="/era/1774">1774</router-link> |
-      <router-link to="/era/1789">1789</router-link> |
-      <router-link to="/era/1803">1803</router-link>
+      <router-link to="/era/1">1774</router-link> |
+      <router-link to="/era/2">1869</router-link> |
+      <router-link to="/era/3">1898</router-link>
     </nav>
   </header>
 

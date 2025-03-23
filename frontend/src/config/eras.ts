@@ -14,7 +14,11 @@ export const eras: EraConfig[] = [
     description: '普利斯特里在此發現氧氣。',
     modelPath: '/models/priestley_lab.glb',
     modelScale: { x: 1, y: 1, z: 1 },
-    cameraPosition: { x: 0, y: 5, z: 10 }
+    cameraPosition: { 
+      x: 0,      // 左右位置
+      y: 20,      // 提高高度
+      z: 20      // 距離
+    }
   },
   {
     id: 2,

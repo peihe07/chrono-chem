@@ -16,7 +16,10 @@
     </div>
 
     <Transition name="slide">
-      <div class="era-data-panel" v-if="showPanel && (events.length > 0 || scientists.length > 0)">
+      <div class="era-data-panel" v-if="showPanel">
+        <div v-if="events.length === 0 && scientists.length === 0" class="empty-state">
+          暫無相關資料
+        </div>
         <div v-if="events.length > 0">
           <h3>🔬 相關事件 ({{ events.length }})</h3>
           <ul>
@@ -114,20 +117,43 @@ const handleResize = () => {
 const loadEraModel = async (eraId: number) => {
   error.value = '';  // 重置錯誤訊息
   const era = eras.find(e => e.id === eraId);
-  if (!scene || !era) return;
+  console.log('當前時代ID:', eraId, '找到的時代配置:', era);
+  
+  if (!scene || !era) {
+    error.value = '無法載入場景';
+    return;
+  }
 
   isLoading.value = true;
   try {
+    console.log('開始載入模型:', era.modelPath, '場景ID:', eraId);
+    console.log('模型配置:', {
+      scale: era.modelScale,
+      cameraPosition: era.cameraPosition
+    });
+    
     await scene.loadModel(era.modelPath, era.modelScale, era.cameraPosition);
-    const [eventsRes, scientistsRes] = await Promise.all([
-      fetchEvents(eraId),
-      fetchScientists(eraId),
-    ]);
-    events.value = eventsRes.data as Event[];
-    scientists.value = scientistsRes.data as Scientist[];
-  } catch (err) {
-    error.value = '載入資料時發生錯誤，請稍後再試';
-    console.error('載入錯誤:', err);
+    console.log('模型載入成功');
+    
+    try {
+      console.log('開始載入相關資料');
+      const [eventsRes, scientistsRes] = await Promise.all([
+        fetchEvents(eraId),
+        fetchScientists(eraId),
+      ]);
+      events.value = eventsRes.data as Event[];
+      scientists.value = scientistsRes.data as Scientist[];
+      console.log('資料載入成功:', {
+        events: events.value.length,
+        scientists: scientists.value.length
+      });
+    } catch (apiError) {
+      console.error('API 請求錯誤:', apiError);
+      error.value = '無法載入相關資料';
+    }
+  } catch (modelError: unknown) {
+    console.error('模型載入失敗:', modelError);
+    error.value = `模型 ${era.modelPath} 載入失敗: ${modelError instanceof Error ? modelError.message : '未知錯誤'}`;
   } finally {
     isLoading.value = false;
   }
@@ -144,16 +170,22 @@ const navigateToEra = (eraId: number) => {
 
 <style scoped>
 .time-travel-view {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   position: relative;
+  background: #000;
 }
 
 .scene-container {
-  flex: 1;
   width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
 .controls {
@@ -161,6 +193,7 @@ const navigateToEra = (eraId: number) => {
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 2;
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -365,5 +398,12 @@ button:disabled {
 .era-data-panel::-webkit-scrollbar-thumb {
   background: rgba(66, 184, 131, 0.5);
   border-radius: 3px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
 }
 </style>
