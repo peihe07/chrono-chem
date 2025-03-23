@@ -19,12 +19,12 @@ export class Scene {
     
     // 設置相機
     this.camera = new THREE.PerspectiveCamera(
-      90,
+      75,  // 視角改為 75 度，提供更好的視野
       container.clientWidth / container.clientHeight,
       0.1,
       1000
     );
-    this.camera.position.set(0, 2, 15);
+    this.camera.position.set(0, 5, 10);  // 調整初始相機位置
     this.camera.lookAt(0, 0, 0);
 
     // 設置渲染器
@@ -39,10 +39,21 @@ export class Scene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minDistance = 5;
-    this.controls.maxDistance = 20;
-    this.controls.maxPolarAngle = Math.PI / 1.5;
-    this.controls.minPolarAngle = Math.PI / 6;
+    this.controls.minDistance = 1;  // 允許更近的距離
+    this.controls.maxDistance = 50;  // 允許更遠的距離
+    this.controls.maxPolarAngle = Math.PI / 1.5;  // 限制俯視角度
+    this.controls.minPolarAngle = 0;  // 允許從上方查看
+    this.controls.enablePan = true;  // 允許平移
+    this.controls.panSpeed = 0.8;  // 增加平移速度
+    this.controls.rotateSpeed = 0.8;  // 增加旋轉速度
+    this.controls.zoomSpeed = 1.5;  // 增加縮放速度
+    this.controls.target.set(0, 0, 0);  // 設置旋轉中心點
+    this.controls.enableZoom = true;  // 確保啟用縮放
+    this.controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.PAN
+    };
     
     // 添加環境光
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -77,109 +88,162 @@ export class Scene {
   async loadModel(
     url: string, 
     scale: { x: number; y: number; z: number } = { x: 1, y: 1, z: 1 },
-    cameraPosition: { x: number; y: number; z: number } | null = null
+    cameraPosition: { x: number; y: number; z: number } | null = null,
+    cameraTarget: { x: number; y: number; z: number } | null = null
   ): Promise<void> {
     console.log('開始載入模型:', url);
     
     try {
       // 檢查文件是否存在
+      console.log('檢查模型文件是否存在...');
       const response = await fetch(url);
       if (!response.ok) {
+        console.error('模型文件不存在:', url, '狀態碼:', response.status);
         throw new Error(`模型文件不存在: ${url} (${response.status})`);
       }
+      console.log('模型文件存在，開始載入...');
 
-      // 如果存在當前模型，先移除它
+      // 清理當前模型
       if (this.currentModel) {
+        console.log('清理當前模型...');
         this.scene.remove(this.currentModel);
         this.currentModel.traverse((child) => {
           if (child instanceof THREE.Mesh) {
             child.geometry.dispose();
             if (child.material instanceof THREE.Material) {
               child.material.dispose();
-            } else if (Array.isArray(child.material)) {
-              child.material.forEach(material => material.dispose());
             }
           }
         });
         this.currentModel = null;
       }
 
-      // 重置相機位置
-      this.camera.position.set(0, 2, 15);
-      this.camera.lookAt(0, 0, 0);
-
-      console.log('開始載入 GLB 文件...');
-      const gltf = await this.loader.loadAsync(url);
-      console.log('GLB 文件載入成功:', gltf);
-      const model = gltf.scene;
+      // 載入新模型
+      console.log('使用 GLTFLoader 載入模型...');
+      const gltf = await this.loader.loadAsync(url).catch(error => {
+        console.error('GLTFLoader 載入失敗:', error);
+        throw error;
+      });
       
+      console.log('模型載入成功，設置場景...');
+      const model = gltf.scene;
+
       // 計算模型的邊界框
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-      
-      // 根據模型大小自動調整比例
+
+      console.log('模型尺寸:', {
+        size: { x: size.x, y: size.y, z: size.z },
+        center: { x: center.x, y: center.y, z: center.z }
+      });
+
+      // 自動調整模型大小
       const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 10; // 目標大小
+      const targetSize = 3;  // 減小基礎目標大小
       const autoScale = targetSize / maxDim;
+
+      // 設置模型位置和縮放
+      model.position.set(
+        -center.x,
+        -center.y + (size.y * 0.45),  // 稍微調整 Y 軸位置
+        -center.z - (size.z * 0.3)     // 將模型向前移動
+      );
       
-      // 遍歷模型中的所有網格
+      // 應用縮放，考慮到模型的實際大小
+      const finalScale = {
+        x: scale.x * autoScale * 1.2,  // 增加一個額外的縮放係數
+        y: scale.y * autoScale * 1.2,
+        z: scale.z * autoScale * 1.2
+      };
+      model.scale.set(finalScale.x, finalScale.y, finalScale.z);
+
+      console.log('模型變換:', {
+        position: model.position,
+        scale: finalScale,
+        autoScale
+      });
+
+      // 設置陰影和材質
       model.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           child.castShadow = true;
           child.receiveShadow = true;
-          // 確保所有材質都正確設置
           if (child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => {
-                mat.side = THREE.DoubleSide;
-                mat.needsUpdate = true;
-              });
-            } else {
-              child.material.side = THREE.DoubleSide;
-              child.material.needsUpdate = true;
-            }
+            child.material.side = THREE.DoubleSide;
+            child.material.needsUpdate = true;
           }
         }
       });
-      
-      // 調整模型位置和比例
-      model.position.set(-center.x, -center.y, -center.z); // 將模型置於中心
-      model.scale.set(
-        scale.x * autoScale,
-        scale.y * autoScale,
-        scale.z * autoScale
-      );
-      
+
       this.currentModel = model;
       this.scene.add(this.currentModel);
 
-      // 設置相機位置
+      // 調整相機位置和目標點
       if (cameraPosition) {
+        console.log('設置指定的相機位置:', cameraPosition);
         this.camera.position.set(
           cameraPosition.x,
           cameraPosition.y,
           cameraPosition.z
         );
       } else {
-        // 根據模型大小自動設置相機位置
-        const distance = Math.max(size.x, size.y, size.z) * 2;
-        this.camera.position.set(distance, distance / 2, distance);
+        // 自動設置相機位置
+        const distance = maxDim * 1.0;
+        const height = size.y * 0.6;
+        console.log('設置自動計算的相機位置:', {
+          distance,
+          height,
+          position: {
+            x: distance,
+            y: height,
+            z: distance
+          }
+        });
+        this.camera.position.set(distance, height, distance);
       }
-      this.camera.lookAt(0, 0, 0);
+
+      // 設置相機目標點
+      if (cameraTarget) {
+        console.log('設置指定的相機目標點:', cameraTarget);
+        this.controls.target.set(
+          cameraTarget.x,
+          cameraTarget.y,
+          cameraTarget.z
+        );
+        this.camera.lookAt(
+          cameraTarget.x,
+          cameraTarget.y,
+          cameraTarget.z
+        );
+      } else {
+        // 自動計算目標點
+        const targetY = size.y * 0.35;
+        const targetZ = -size.z * 0.2;
+        this.controls.target.set(0, targetY, targetZ);
+        this.camera.lookAt(0, targetY, targetZ);
+      }
+      
+      // 調整光源以跟隨相機和目標點
+      const target = cameraTarget || { x: 0, y: size.y * 0.35, z: -size.z * 0.2 };
+      this.directionalLight.position.set(
+        this.camera.position.x * 1.2,
+        this.camera.position.y * 1.5,
+        this.camera.position.z * 1.2
+      );
+      this.directionalLight.target.position.set(target.x, target.y, target.z);
+      this.scene.add(this.directionalLight.target);
+
+      // 調整環境光強度
+      this.ambientLight.intensity = 0.6;  // 增加環境光強度
+
+      // 更新控制器
       this.controls.update();
 
-      // 調整光源
-      this.ambientLight.intensity = 0.7;
-      this.directionalLight.intensity = 1.2;
-      this.directionalLight.position.set(
-        this.camera.position.x,
-        this.camera.position.y,
-        this.camera.position.z
-      );
+      console.log('模型載入和設置完成');
 
     } catch (error: unknown) {
-      console.error('模型載入失敗:', error);
+      console.error('模型載入過程中發生錯誤:', error);
       const errorMessage = error instanceof Error ? error.message : '未知錯誤';
       throw new Error(`載入模型失敗: ${errorMessage}`);
     }

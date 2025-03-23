@@ -14,7 +14,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     fs: {
-      strict: false
+      strict: false,
+      allow: ['..']  // 允許訪問上級目錄
     },
     proxy: {
       '/api': {
@@ -22,5 +23,7 @@ export default defineConfig({
         changeOrigin: true
       }
     }
-  }
+  },
+  publicDir: 'public',  // 明確指定公共資源目錄
+  assetsInclude: ['**/*.glb']  // 確保 .glb 文件被識別為資源
 })

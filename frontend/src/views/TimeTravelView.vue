@@ -132,7 +132,12 @@ const loadEraModel = async (eraId: number) => {
       cameraPosition: era.cameraPosition
     });
     
-    await scene.loadModel(era.modelPath, era.modelScale, era.cameraPosition);
+    await scene.loadModel(
+      era.modelPath,
+      era.modelScale,
+      era.cameraPosition,
+      era.cameraTarget
+    );
     console.log('模型載入成功');
     
     try {
