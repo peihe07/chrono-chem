@@ -17,7 +17,7 @@ fi
 # 啟動後端服務器
 cd backend
 python manage.py migrate
-python manage.py runserver &
+python manage.py runserver 8001 &
 
 # 等待後端啟動
 sleep 2
