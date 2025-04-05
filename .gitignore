@@ -154,3 +154,6 @@ build/
 # Database
 *.sqlite3
 *.db
+
+# Frontend zip
+frontend.zip
