@@ -5,7 +5,10 @@
 <template>
   <div class="app-container">
     <header class="app-header">
-      <h1 class="app-title">ChronoChem</h1>
+      <div class="header-content">
+        <img src="./assets/logo.png" alt="ChronoChem Logo" class="logo" />
+        <h1 class="app-title">ChronoChem</h1>
+      </div>
     </header>
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -24,10 +27,10 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f5f5;
+  background: #F2F2F2;
 }
 
 .app-container {
@@ -42,19 +45,45 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: url('./assets/header-bg.png') no-repeat center center;
+  background-size: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 90px;
+  padding: 0 30px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(to right, rgba(66, 184, 131, 0.95), rgba(38, 84, 124, 0.85));
+  backdrop-filter: blur(5px);
+}
+
+.logo {
+  height: 70px;
+  width: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) brightness(1.2);
+  transition: all 0.3s ease;
+  opacity: 1;
+  transform-origin: center;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)) brightness(1.3);
 }
 
 .app-title {
-  font-size: 1.8rem;
+  font-family: 'Philosopher', serif;
+  font-size: 2.2rem;
   font-weight: 700;
-  color: #42b883;
-  text-align: center;
+  color: #FFFFFF;
   letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 過渡動畫 */
@@ -71,15 +100,10 @@ body {
 /* 確保 TimeTravelView 可以全屏顯示 */
 .time-travel-view {
   position: fixed;
-  top: 0;
+  top: 90px;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 90px);
   z-index: 1;
-}
-
-/* 調整 TimeTravelView 的內容位置，避免被標題遮擋 */
-.time-travel-view .scene-container {
-  padding-top: 4rem;
 }
 </style>

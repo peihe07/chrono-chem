@@ -495,7 +495,43 @@ const handleChemistMessage = async (message: string) => {
   padding: 0;
   overflow: hidden;
   position: relative;
-  background: #000;
+}
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: url('../assets/header-bg.png') no-repeat center center;
+  background-size: cover;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1200px;
+  width: 100%;
+  height: 100%;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(to right, rgba(38, 84, 124, 0.95), rgba(38, 84, 124, 0.85));
+  backdrop-filter: blur(5px);
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .scene-container {
