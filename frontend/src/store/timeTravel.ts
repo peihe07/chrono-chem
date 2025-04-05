@@ -148,16 +148,18 @@ export const useTimeTravelStore = defineStore('timeTravel', {
 
       // 檢查時光旅人成就
       const visitedYears = new Set(
-        this.completedEvents
-          .map(eventId => this.currentYear)
-          .filter((year): year is number => year !== null)
+        this.completedEvents.map(eventId => {
+          const event = this.completedEvents.find(e => e === eventId)
+          return event ? this.currentYear : null
+        }).filter((year): year is number => year !== null)
       )
       if (visitedYears.size >= eras.length) {
         this.unlockAchievement('time_traveler')
       }
 
       // 檢查化學大師成就
-      if (this.completedEvents.length >= 5) { // 假設有5個實驗
+      const uniqueEvents = new Set(this.completedEvents)
+      if (uniqueEvents.size >= 5) { // 假設有5個實驗
         this.unlockAchievement('chemistry_master')
       }
     },
