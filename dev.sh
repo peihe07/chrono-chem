@@ -3,6 +3,12 @@
 # 確保在項目根目錄
 cd "$(dirname "$0")"
 
+# 設置資料庫環境變數
+export POSTGRES_HOST=localhost
+export POSTGRES_USER=peihe
+export POSTGRES_PASSWORD=''
+export POSTGRES_DB=chronochem
+
 # 檢查必要的目錄是否存在
 if [ ! -d "frontend" ]; then
     echo "錯誤：找不到 frontend 目錄"
