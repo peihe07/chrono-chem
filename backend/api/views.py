@@ -2,11 +2,22 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .models import Era, Chemist, HistoricalEvent, ChatHistory
 from .serializers import (
     EraSerializer, ChemistSerializer, HistoricalEventSerializer,
     ChatHistorySerializer, ChatMessageSerializer
 )
+
+class HealthCheck(APIView):
+    """
+    健康檢查端點
+    """
+    def get(self, request):
+        return Response({
+            'status': 'ok',
+            'timestamp': timezone.now().isoformat()
+        })
 
 class EraList(generics.ListAPIView):
     queryset = Era.objects.all()
@@ -54,35 +65,39 @@ class ChatHistoryList(generics.ListAPIView):
 
     def get_queryset(self):
         chemist_id = self.kwargs['chemist_id']
-        return ChatHistory.objects.filter(chemist_id=chemist_id)
+        return ChatHistory.objects.filter(chemist_id=chemist_id).order_by('timestamp')
 
-class SendMessage(APIView):
-    def post(self, request, chemist_id):
-        chemist = get_object_or_404(Chemist, id=chemist_id)
-        serializer = ChatMessageSerializer(data=request.data)
+class SendMessage(generics.CreateAPIView):
+    serializer_class = ChatHistorySerializer
+    
+    def create(self, request, *args, **kwargs):
+        chemist_id = self.kwargs['chemist_id']
+        content = request.data.get('content', '')
         
-        if serializer.is_valid():
-            # 保存用戶訊息
-            user_message = ChatHistory.objects.create(
-                chemist=chemist,
-                message=serializer.validated_data['message'],
-                is_from_user=True
+        if not content:
+            return Response(
+                {'error': '消息內容不能為空'}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-            
-            # TODO: 這裡可以整合 GPT API 來生成化學家的回應
-            # 暫時使用固定的回應
-            chemist_response = "感謝您的訊息！我是 " + chemist.name + "，很高興能與您交流。"
-            
-            # 保存化學家的回應
-            ChatHistory.objects.create(
-                chemist=chemist,
-                message=chemist_response,
-                is_from_user=False
-            )
-            
-            return Response({
-                'user_message': ChatHistorySerializer(user_message).data,
-                'chemist_response': chemist_response
-            }, status=status.HTTP_201_CREATED)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 創建用戶消息
+        user_message = ChatHistory.objects.create(
+            chemist_id=chemist_id,
+            role='user',
+            content=content,
+            timestamp=timezone.now()
+        )
+        
+        # TODO: 這裡可以添加與 AI 模型的整合
+        # 暫時返回一個簡單的回應
+        assistant_message = ChatHistory.objects.create(
+            chemist_id=chemist_id,
+            role='assistant',
+            content=f'收到您的消息：{content}',
+            timestamp=timezone.now()
+        )
+        
+        return Response({
+            'user_message': ChatHistorySerializer(user_message).data,
+            'assistant_message': ChatHistorySerializer(assistant_message).data
+        })
