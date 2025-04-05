@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import TWEEN from '@tweenjs/tween.js';
-import { ChemistModel, ChemistModelConfig } from './ChemistModel';
+import { ChemistModel, type ChemistModelConfig } from './ChemistModel';
 
 export interface CameraPreset {
   position: { x: number; y: number; z: number };
@@ -135,7 +135,12 @@ export class Scene {
     cameraPosition: { x: number; y: number; z: number } | null = null,
     cameraTarget: { x: number; y: number; z: number } | null = null
   ): Promise<void> {
-    console.log('開始載入模型:', url);
+    console.log('開始載入模型:', {
+      url,
+      scale,
+      cameraPosition,
+      cameraTarget
+    });
     
     try {
       // 檢查文件是否存在
@@ -194,72 +199,46 @@ export class Scene {
         -center.z - (size.z * 0.3)     // 將模型向前移動
       );
       
-      // 應用縮放，考慮到模型的實際大小
-      const finalScale = {
-        x: scale.x * autoScale * 1.2,  // 增加一個額外的縮放係數
-        y: scale.y * autoScale * 1.2,
-        z: scale.z * autoScale * 1.2
-      };
-      model.scale.set(finalScale.x, finalScale.y, finalScale.z);
-
-      console.log('模型變換:', {
-        position: model.position,
-        scale: finalScale,
-        autoScale
-      });
-
-      // 設置陰影和材質
-      model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          if (child.material) {
-            child.material.side = THREE.DoubleSide;
-            child.material.needsUpdate = true;
-          }
-        }
-      });
-
-      this.currentModel = model;
-      this.scene.add(this.currentModel);
-
-      // 在設置相機位置時使用動畫
-      if (cameraPosition) {
-        this.animateCamera(
-          cameraPosition,
-          cameraTarget || { x: 0, y: 0, z: 0 }
-        );
-      } else {
-        // 自動計算相機位置
-        const distance = maxDim * 1.0;
-        const height = size.y * 0.6;
-        const position = { x: distance, y: height, z: distance };
-        const target = { x: 0, y: size.y * 0.35, z: -size.z * 0.2 };
-        this.animateCamera(position, target);
-      }
-
-      // 調整光源以跟隨相機和目標點
-      const target = cameraTarget || { x: 0, y: size.y * 0.35, z: -size.z * 0.2 };
-      this.directionalLight.position.set(
-        this.camera.position.x * 1.2,
-        this.camera.position.y * 1.5,
-        this.camera.position.z * 1.2
+      // 應用縮放
+      model.scale.set(
+        scale.x * autoScale,
+        scale.y * autoScale,
+        scale.z * autoScale
       );
-      this.directionalLight.target.position.set(target.x, target.y, target.z);
-      this.scene.add(this.directionalLight.target);
-
-      // 調整環境光強度
-      this.ambientLight.intensity = 0.6;  // 增加環境光強度
-
+      
+      // 添加到場景
+      this.scene.add(model);
+      this.currentModel = model;
+      
+      // 設置相機位置和目標點
+      if (cameraPosition) {
+        console.log('設置相機位置:', cameraPosition);
+        this.camera.position.set(
+          cameraPosition.x,
+          cameraPosition.y,
+          cameraPosition.z
+        );
+      }
+      
+      if (cameraTarget) {
+        console.log('設置相機目標點:', cameraTarget);
+        this.controls.target.set(
+          cameraTarget.x,
+          cameraTarget.y,
+          cameraTarget.z
+        );
+      }
+      
       // 更新控制器
       this.controls.update();
-
-      console.log('模型載入和設置完成');
-
-    } catch (error: unknown) {
-      console.error('模型載入過程中發生錯誤:', error);
-      const errorMessage = error instanceof Error ? error.message : '未知錯誤';
-      throw new Error(`載入模型失敗: ${errorMessage}`);
+      
+      // 更新平行光位置
+      this.directionalLight.position.copy(this.camera.position);
+      
+      console.log('模型載入完成');
+    } catch (error) {
+      console.error('載入模型失敗:', error);
+      throw error;
     }
   }
 
@@ -505,5 +484,65 @@ export class Scene {
 
   public getSelectedChemist(): ChemistModel | null {
     return this.selectedChemist;
+  }
+
+  public clearScene(): void {
+    console.log('開始清除場景...');
+    
+    // 清除當前模型
+    if (this.currentModel) {
+      console.log('清除當前模型');
+      this.scene.remove(this.currentModel);
+      this.currentModel.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (child.material instanceof THREE.Material) {
+            child.material.dispose();
+          }
+        }
+      });
+      this.currentModel = null;
+    }
+    
+    // 清除化學家模型
+    console.log('清除化學家模型');
+    this.chemistModels.forEach((model) => {
+      const chemistModel = model.getModel();
+      if (chemistModel) {
+        this.scene.remove(chemistModel);
+      }
+      const highlightMesh = model.getHighlightMesh();
+      if (highlightMesh) {
+        this.scene.remove(highlightMesh);
+      }
+      model.dispose();
+    });
+    this.chemistModels.clear();
+    
+    // 重置相機位置和目標點
+    console.log('重置相機位置和目標點');
+    const defaultPreset = this.cameraPresets[0];
+    if (defaultPreset) {
+      this.camera.position.set(
+        defaultPreset.position.x,
+        defaultPreset.position.y,
+        defaultPreset.position.z
+      );
+      this.controls.target.set(
+        defaultPreset.target.x,
+        defaultPreset.target.y,
+        defaultPreset.target.z
+      );
+    } else {
+      this.camera.position.set(0, 5, 10);
+      this.controls.target.set(0, 0, 0);
+    }
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+    
+    // 更新平行光位置
+    this.directionalLight.position.copy(this.camera.position);
+    
+    console.log('場景清除完成');
   }
 }

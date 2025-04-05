@@ -54,10 +54,16 @@ import axios from 'axios';
 
 const router = useRouter();
 const container = ref<HTMLElement | null>(null);
-const currentEra = ref<number>(0);
+const currentEra = ref<number>(1);
 const isLoading = ref(false);
 const showPanel = ref(true);
 const totalEras = eras.length;
+
+// 監聽 currentEra 的變化
+watch(currentEra, async (newEraId) => {
+  console.log('時代變更:', newEraId);
+  await loadEraModel(newEraId);
+});
 
 interface Event {
   id: number;
@@ -96,22 +102,78 @@ const isControlPanelExpanded = ref<boolean>(false);
 const showChemistDialog = ref<boolean>(false);
 const selectedChemist = ref<ChemistModelConfig | null>(null);
 
+// 全局錯誤處理
+const handleError = (err: unknown, context: string) => {
+  console.error(`${context} 錯誤:`, err);
+  if (err instanceof Error) {
+    error.value = `${context}: ${err.message}`;
+  } else {
+    error.value = `${context}: 未知錯誤`;
+  }
+  // 3秒後清除錯誤訊息
+  setTimeout(() => {
+    error.value = '';
+  }, 3000);
+};
+
 onMounted(async () => {
-  if (container.value) {
+  console.log('開始初始化場景...');
+  
+  if (!container.value) {
+    console.error('找不到容器元素');
+    error.value = '無法初始化場景：找不到容器元素';
+    return;
+  }
+
+  try {
+    // 1. 初始化場景
+    console.log('創建場景實例...');
     scene = new Scene(container.value);
+    console.log('場景實例創建成功');
+    
+    // 2. 獲取相機預設值
+    console.log('獲取相機預設值...');
     cameraPresets.value = scene.getCameraPresets();
+    console.log('相機預設值:', cameraPresets.value);
+    
+    // 3. 載入時代資料
+    console.log('載入時代資料...');
+    let eraData;
+    try {
+      const response = await fetchEras();
+      eraData = response.data;
+      console.log('時代資料載入成功：', eraData);
+    } catch (apiError) {
+      console.error('載入時代資料失敗:', apiError);
+      console.log('使用本地配置繼續...');
+      eraData = eras;
+    }
+    
+    // 4. 載入初始時代模型
+    console.log('載入初始時代模型...');
     await loadEraModel(currentEra.value);
+    
+    // 5. 載入化學家數據
+    console.log('載入化學家數據...');
     await loadScientists();
+    
+    // 6. 添加化學家模型
+    console.log('添加化學家模型...');
     await addChemistModels();
+    
+    // 7. 添加事件監聽器
+    console.log('添加事件監聽器...');
     window.addEventListener('resize', handleResize);
     window.addEventListener('chemist-selected', (event: unknown) => {
       const customEvent = event as CustomEvent<ChemistModelConfig>;
       handleChemistSelected(customEvent);
     });
+    
+    console.log('場景初始化完成');
+  } catch (err) {
+    console.error('場景初始化失敗:', err);
+    handleError(err, '場景初始化');
   }
-
-  const response = await fetchEras();
-  console.log('時代資料：', response.data);
 });
 
 onUnmounted(() => {
@@ -129,49 +191,126 @@ const handleResize = () => {
 
 async function loadEraModel(eraId: number) {
   error.value = '';  // 重置錯誤訊息
-  const era = eras.find(e => e.id === eraId);
-  console.log('當前時代ID:', eraId, '找到的時代配置:', era);
+  console.log('開始載入時代模型，ID:', eraId);
   
-  if (!scene || !era) {
-    error.value = '無法載入場景';
+  const era = eras.find(e => e.id === eraId);
+  console.log('找到的時代配置:', era);
+  
+  if (!scene) {
+    const errorMsg = '場景未初始化';
+    console.error(errorMsg);
+    handleError(new Error(errorMsg), '載入場景失敗');
+    return;
+  }
+  
+  if (!era) {
+    const errorMsg = `找不到時代ID: ${eraId}`;
+    console.error(errorMsg);
+    handleError(new Error(errorMsg), '載入場景失敗');
     return;
   }
 
   isLoading.value = true;
   try {
-    console.log('開始載入模型:', era.modelPath, '場景ID:', eraId);
-    console.log('模型配置:', {
-      scale: era.modelScale,
-      cameraPosition: era.cameraPosition
+    console.log('準備載入模型，配置:', {
+      modelPath: era.modelPath,
+      modelScale: era.modelScale,
+      cameraPosition: era.cameraPosition,
+      cameraTarget: era.cameraTarget
     });
     
-    await scene.loadModel(
-      era.modelPath,
-      era.modelScale,
-      era.cameraPosition,
-      era.cameraTarget
-    );
-    console.log('模型載入成功');
+    // 檢查模型文件是否存在
+    let response: Response;
+    try {
+      console.log('檢查模型文件:', era.modelPath);
+      response = await fetch(era.modelPath);
+      if (!response.ok) {
+        throw new Error(`模型文件不存在: ${era.modelPath} (${response.status})`);
+      }
+      console.log('模型文件存在，開始載入...');
+      
+      // 檢查文件大小
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) {
+        const fileSize = parseInt(contentLength);
+        console.log('模型文件大小:', fileSize, 'bytes');
+        if (fileSize > 100 * 1024 * 1024) { // 100MB
+          console.warn('模型文件較大，可能需要較長載入時間');
+        }
+      }
+    } catch (fetchError) {
+      console.error('檢查模型文件失敗:', fetchError);
+      throw fetchError;
+    }
     
+    // 清除現有模型
+    console.log('清除現有模型...');
+    scene.clearScene();
+    
+    // 等待一小段時間確保場景已清除
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log('開始載入新模型到場景...');
+    try {
+      await scene.loadModel(
+        era.modelPath,
+        era.modelScale,
+        era.cameraPosition,
+        era.cameraTarget
+      );
+      console.log('模型載入成功');
+      
+      // 移除重複的 currentEra 設置
+      console.log('當前時代:', currentEra.value);
+    } catch (modelLoadError) {
+      console.error('模型載入到場景失敗:', modelLoadError);
+      throw modelLoadError;
+    }
+    
+    // 嘗試載入相關資料
     try {
       console.log('開始載入相關資料');
       const [eventsRes, scientistsRes] = await Promise.all([
-        fetchEvents(eraId),
-        fetchScientists(eraId),
+        fetchEvents(eraId).catch(err => {
+          console.error('載入事件資料失敗:', err);
+          handleError(err, '載入事件資料');
+          return { data: [] };
+        }),
+        fetchScientists(eraId).catch(err => {
+          console.error('載入化學家資料失敗:', err);
+          handleError(err, '載入化學家資料');
+          return { data: [] };
+        }),
       ]);
-      events.value = eventsRes.data as Event[];
-      scientists.value = scientistsRes.data as Scientist[];
-      console.log('資料載入成功:', {
+      
+      if (eventsRes.data) {
+        events.value = eventsRes.data as Event[];
+        console.log('事件資料載入成功:', events.value.length, '條記錄');
+      }
+      
+      if (scientistsRes.data) {
+        scientists.value = scientistsRes.data as Scientist[];
+        console.log('化學家資料載入成功:', scientists.value.length, '條記錄');
+      }
+      
+      console.log('所有資料載入完成:', {
         events: events.value.length,
         scientists: scientists.value.length
       });
     } catch (apiError) {
       console.error('API 請求錯誤:', apiError);
-      error.value = '無法載入相關資料';
+      handleError(apiError, 'API 請求');
+      console.log('使用空數據繼續...');
+      events.value = [];
+      scientists.value = [];
     }
   } catch (modelError: unknown) {
     console.error('模型載入失敗:', modelError);
-    error.value = `模型 ${era.modelPath} 載入失敗: ${modelError instanceof Error ? modelError.message : '未知錯誤'}`;
+    if (modelError instanceof Error) {
+      handleError(modelError, '模型載入失敗');
+    } else {
+      handleError(new Error('未知錯誤'), '模型載入失敗');
+    }
   } finally {
     isLoading.value = false;
   }
@@ -180,7 +319,6 @@ async function loadEraModel(eraId: number) {
 const navigateToEra = (eraId: number) => {
   if (eraId >= 1 && eraId <= totalEras) {
     currentEra.value = eraId;
-    loadEraModel(eraId);
     router.push(`/era/${eraId}`);
   }
 };
@@ -220,39 +358,108 @@ const getCameraIndicatorStyle = (preset: CameraPreset) => {
 // 載入化學家數據
 const loadScientists = async () => {
   try {
-    const scientistsRes = await axios.get<Scientist[]>('/api/scientists');
-    scientists.value = scientistsRes.data;
+    console.log('開始載入化學家數據，時代ID:', currentEra.value);
+    const response = await fetchScientists(currentEra.value);
+    console.log('API 響應:', response);
+    console.log('API 響應數據類型:', typeof response.data);
+    console.log('API 響應數據結構:', JSON.stringify(response.data, null, 2));
+    
+    if (!response.data) {
+      console.error('API 響應中沒有 data 字段');
+      scientists.value = [];
+      return;
+    }
+    
+    // 如果 response.data 是對象而不是數組，嘗試提取數組
+    let dataArray = response.data;
+    if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+      console.log('嘗試從響應對象中提取數組...');
+      const data = response.data as Record<string, any>;
+      // 檢查常見的數據結構模式
+      if (data.results && Array.isArray(data.results)) {
+        dataArray = data.results;
+      } else if (data.data && Array.isArray(data.data)) {
+        dataArray = data.data;
+      } else if (data.items && Array.isArray(data.items)) {
+        dataArray = data.items;
+      } else {
+        // 如果找不到數組，將對象轉換為數組
+        dataArray = Object.values(data);
+      }
+    }
+    
+    if (!Array.isArray(dataArray)) {
+      console.error('無法獲取有效的數組數據:', typeof dataArray);
+      scientists.value = [];
+      return;
+    }
+    
+    scientists.value = dataArray;
+    console.log('化學家數據載入成功:', {
+      count: scientists.value.length,
+      data: scientists.value
+    });
   } catch (error) {
     console.error('載入化學家數據失敗:', error);
+    handleError(error, '載入化學家數據');
+    scientists.value = [];
   }
 };
 
 // 添加化學家模型
 const addChemistModels = async () => {
-  if (!scene) return;
+  if (!scene) {
+    console.error('場景未初始化，無法添加化學家模型');
+    return;
+  }
+  
+  console.log('化學家數據:', scientists.value);
+  
+  if (!Array.isArray(scientists.value)) {
+    console.error('化學家數據格式錯誤，預期是數組但收到:', typeof scientists.value);
+    scientists.value = [];  // 重置為空數組
+    return;
+  }
+  
+  if (scientists.value.length === 0) {
+    console.log('沒有化學家數據，跳過添加化學家模型');
+    return;
+  }
+  
+  console.log('開始添加化學家模型，共', scientists.value.length, '個');
   
   for (const scientist of scientists.value) {
-    const chemistConfig: ChemistModelConfig = {
-      id: scientist.id,
-      name: scientist.name,
-      position: new THREE.Vector3(
-        scientist.position.x,
-        scientist.position.y,
-        scientist.position.z
-      ),
-      birth_year: scientist.birth_year,
-      death_year: scientist.death_year,
-      bio: scientist.bio || '',
-      portraitPath: scientist.portrait_path || '',
-      modelPath: scientist.model_path || ''
-    };
-    
     try {
+      if (!scientist || typeof scientist !== 'object') {
+        console.error('無效的化學家數據:', scientist);
+        continue;
+      }
+      
+      console.log('添加化學家模型:', scientist.name);
+      const chemistConfig: ChemistModelConfig = {
+        id: scientist.id,
+        name: scientist.name,
+        position: new THREE.Vector3(
+          scientist.position.x,
+          scientist.position.y,
+          scientist.position.z
+        ),
+        birth_year: scientist.birth_year,
+        death_year: scientist.death_year,
+        bio: scientist.bio || '',
+        portraitPath: scientist.portrait_path || '',
+        modelPath: scientist.model_path || ''
+      };
+      
       await scene.addChemist(chemistConfig);
+      console.log('化學家模型添加成功:', scientist.name);
     } catch (error) {
       console.error(`添加化學家 ${scientist.name} 失敗:`, error);
+      handleError(error, `添加化學家 ${scientist.name}`);
     }
   }
+  
+  console.log('化學家模型添加完成');
 };
 
 // 處理化學家選擇
@@ -266,15 +473,16 @@ const handleChemistMessage = async (message: string) => {
   if (!selectedChemist.value) return;
   
   try {
-    const response = await axios.post('/api/chat', {
-      scientist_id: selectedChemist.value.id,
+    console.log('發送訊息給化學家:', selectedChemist.value.name);
+    const response = await axios.post(`/api/chemists/${selectedChemist.value.id}/send_message/`, {
       message: message
     });
     
-    // 這裡可以處理回應，例如在對話框中顯示
     console.log('化學家回應:', response.data);
+    // TODO: 在對話框中顯示回應
   } catch (error) {
     console.error('發送訊息失敗:', error);
+    // TODO: 顯示錯誤訊息給用戶
   }
 };
 </script>

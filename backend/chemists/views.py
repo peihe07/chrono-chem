@@ -1,13 +1,24 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Chemist, ChatHistory
 from .serializers import ChemistSerializer, ChatHistorySerializer
 
 class ChemistViewSet(viewsets.ModelViewSet):
     queryset = Chemist.objects.all()
     serializer_class = ChemistSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['era']
+    search_fields = ['name', 'bio']
+
+    def get_queryset(self):
+        queryset = Chemist.objects.all()
+        era = self.request.query_params.get('era', None)
+        if era is not None:
+            queryset = queryset.filter(era=era)
+        return queryset
 
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):

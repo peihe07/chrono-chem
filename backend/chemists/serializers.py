@@ -8,7 +8,33 @@ class ChatHistorySerializer(serializers.ModelSerializer):
 
 class ChemistSerializer(serializers.ModelSerializer):
     chat_history = ChatHistorySerializer(many=True, read_only=True)
+    position = serializers.SerializerMethodField()
+    birth_year = serializers.IntegerField()
+    death_year = serializers.IntegerField(allow_null=True)
+    portrait_path = serializers.CharField(allow_null=True)
+    model_path = serializers.CharField(allow_null=True)
+    bio = serializers.CharField(allow_null=True)
+    era = serializers.IntegerField()
 
     class Meta:
         model = Chemist
-        fields = ['id', 'name', 'era', 'description', 'position_x', 'position_y', 'position_z', 'model_path', 'chat_history'] 
+        fields = [
+            'id', 
+            'name', 
+            'era', 
+            'description', 
+            'position',
+            'birth_year',
+            'death_year',
+            'portrait_path',
+            'model_path',
+            'bio',
+            'chat_history'
+        ]
+
+    def get_position(self, obj):
+        return {
+            'x': obj.position_x,
+            'y': obj.position_y,
+            'z': obj.position_z
+        } 
