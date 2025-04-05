@@ -47,12 +47,18 @@ git clone https://github.com/yourusername/chrono-chem.git
 cd chrono-chem
 ```
 
-2. 使用 Docker Compose 啟動服務
+2. 設置環境變量
+```bash
+cp .env.example .env
+# 編輯 .env 文件，設置必要的環境變量
+```
+
+3. 使用 Docker Compose 啟動服務
 ```bash
 docker-compose up -d
 ```
 
-3. 訪問應用
+4. 訪問應用
 - 前端：http://localhost:3000
 - 後端 API：http://localhost:8001
 - 管理後台：http://localhost:8001/admin/
@@ -90,14 +96,11 @@ chrono-chem/
 
 ## 環境變量
 
-創建 `.env` 文件並設置以下變量：
+所有環境變量都在 `.env.example` 文件中列出。開發時需要：
 
-```env
-POSTGRES_DB=chronochem
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=db
-```
+1. 複製 `.env.example` 為 `.env`
+2. 根據需要修改 `.env` 中的值
+3. 確保敏感信息（如密碼、API 密鑰）使用安全的值
 
 ## 開發指南
 

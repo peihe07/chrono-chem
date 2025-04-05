@@ -1,51 +1,88 @@
-from rest_framework import generics
-from .models import Era, Scientist, Event
-from .serializers import EraSerializer, ScientistSerializer, EventSerializer
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Era, Chemist, HistoricalEvent, ChatHistory
+from .serializers import (
+    EraSerializer, ChemistSerializer, HistoricalEventSerializer,
+    ChatHistorySerializer, ChatMessageSerializer
+)
 
-class EraListView(generics.ListAPIView):
-    queryset = Era.objects.all().order_by('year')
+class EraList(generics.ListAPIView):
+    queryset = Era.objects.all()
     serializer_class = EraSerializer
 
-class ScientistListView(generics.ListAPIView):
-    serializer_class = ScientistSerializer
+class EraDetail(generics.RetrieveAPIView):
+    queryset = Era.objects.all()
+    serializer_class = EraSerializer
+
+class ChemistList(generics.ListAPIView):
+    queryset = Chemist.objects.all()
+    serializer_class = ChemistSerializer
 
     def get_queryset(self):
-        era_id = self.request.query_params.get('era')
-        if era_id:
-            return Scientist.objects.filter(era_id=era_id)
-        return Scientist.objects.all()
+        queryset = Chemist.objects.all()
+        era_id = self.request.query_params.get('era', None)
+        if era_id is not None:
+            queryset = queryset.filter(era_id=era_id)
+        return queryset
 
-class ScientistDetailView(generics.RetrieveAPIView):
-    queryset = Scientist.objects.all()
-    serializer_class = ScientistSerializer
+class ChemistDetail(generics.RetrieveAPIView):
+    queryset = Chemist.objects.all()
+    serializer_class = ChemistSerializer
 
-class EventListView(generics.ListAPIView):
-    serializer_class = EventSerializer
+class HistoricalEventList(generics.ListAPIView):
+    queryset = HistoricalEvent.objects.all()
+    serializer_class = HistoricalEventSerializer
 
     def get_queryset(self):
-        era_id = self.request.query_params.get('era')
-        if era_id:
-            return Event.objects.filter(era_id=era_id)
-        return Event.objects.all()
+        queryset = HistoricalEvent.objects.all()
+        era_id = self.request.query_params.get('era', None)
+        chemist_id = self.request.query_params.get('chemist', None)
+        if era_id is not None:
+            queryset = queryset.filter(era_id=era_id)
+        if chemist_id is not None:
+            queryset = queryset.filter(chemist_id=chemist_id)
+        return queryset
 
-# Optional GPT-4 模擬端點
-class ScientistChatView(APIView):
-    def get(self, request, pk):
-        scientist = Scientist.objects.get(pk=pk)
-        return Response({
-            "message": f"Hello, I'm {scientist.name}. I contributed to the field of chemistry during the {scientist.era.title} era."
-        })
+class HistoricalEventDetail(generics.RetrieveAPIView):
+    queryset = HistoricalEvent.objects.all()
+    serializer_class = HistoricalEventSerializer
 
-@api_view(['GET'])
-def health_check(request):
-    """
-    健康檢查端點
-    """
-    return Response(
-        {"status": "healthy"},
-        status=status.HTTP_200_OK
-    )
+class ChatHistoryList(generics.ListAPIView):
+    serializer_class = ChatHistorySerializer
+
+    def get_queryset(self):
+        chemist_id = self.kwargs['chemist_id']
+        return ChatHistory.objects.filter(chemist_id=chemist_id)
+
+class SendMessage(APIView):
+    def post(self, request, chemist_id):
+        chemist = get_object_or_404(Chemist, id=chemist_id)
+        serializer = ChatMessageSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # 保存用戶訊息
+            user_message = ChatHistory.objects.create(
+                chemist=chemist,
+                message=serializer.validated_data['message'],
+                is_from_user=True
+            )
+            
+            # TODO: 這裡可以整合 GPT API 來生成化學家的回應
+            # 暫時使用固定的回應
+            chemist_response = "感謝您的訊息！我是 " + chemist.name + "，很高興能與您交流。"
+            
+            # 保存化學家的回應
+            ChatHistory.objects.create(
+                chemist=chemist,
+                message=chemist_response,
+                is_from_user=False
+            )
+            
+            return Response({
+                'user_message': ChatHistorySerializer(user_message).data,
+                'chemist_response': chemist_response
+            }, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

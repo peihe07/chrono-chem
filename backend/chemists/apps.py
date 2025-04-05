@@ -1,7 +1,6 @@
 from django.apps import AppConfig
 
-
-class ApiConfig(AppConfig):
+class ChemistsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'api'
-    verbose_name = '化學時光機 API'
+    name = 'chemists'
+    verbose_name = '化學家管理' 

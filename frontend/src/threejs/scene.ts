@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import TWEEN from '@tweenjs/tween.js';
+import { ChemistModel, ChemistModelConfig } from './ChemistModel';
+
+export interface CameraPreset {
+  position: { x: number; y: number; z: number };
+  target: { x: number; y: number; z: number };
+  name: string;
+}
 
 export class Scene {
   private scene: THREE.Scene;
@@ -11,6 +19,33 @@ export class Scene {
   private loader: GLTFLoader;
   private ambientLight: THREE.AmbientLight;
   private directionalLight: THREE.DirectionalLight;
+  private chemistModels: Map<number, ChemistModel> = new Map();
+  private raycaster: THREE.Raycaster;
+  private mouse: THREE.Vector2;
+  private selectedChemist: ChemistModel | null = null;
+  private clock: THREE.Clock;
+  private cameraPresets: CameraPreset[] = [
+    {
+      name: '正面視圖',
+      position: { x: 0, y: 2, z: 10 },
+      target: { x: 0, y: 0, z: 0 }
+    },
+    {
+      name: '側面視圖',
+      position: { x: 10, y: 2, z: 0 },
+      target: { x: 0, y: 0, z: 0 }
+    },
+    {
+      name: '俯視圖',
+      position: { x: 0, y: 10, z: 0 },
+      target: { x: 0, y: 0, z: 0 }
+    },
+    {
+      name: '45度視角',
+      position: { x: 10, y: 5, z: 10 },
+      target: { x: 0, y: 0, z: 0 }
+    }
+  ];
 
   constructor(container: HTMLElement) {
     // 初始化場景
@@ -82,6 +117,15 @@ export class Scene {
     // 初始化加載器
     this.loader = new GLTFLoader();
 
+    // 初始化射線檢測器
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    this.clock = new THREE.Clock();
+    
+    // 添加滑鼠事件監聽器
+    container.addEventListener('mousemove', this.onMouseMove.bind(this));
+    container.addEventListener('click', this.onMouseClick.bind(this));
+    
     this.animate();
   }
 
@@ -179,51 +223,21 @@ export class Scene {
       this.currentModel = model;
       this.scene.add(this.currentModel);
 
-      // 調整相機位置和目標點
+      // 在設置相機位置時使用動畫
       if (cameraPosition) {
-        console.log('設置指定的相機位置:', cameraPosition);
-        this.camera.position.set(
-          cameraPosition.x,
-          cameraPosition.y,
-          cameraPosition.z
+        this.animateCamera(
+          cameraPosition,
+          cameraTarget || { x: 0, y: 0, z: 0 }
         );
       } else {
-        // 自動設置相機位置
+        // 自動計算相機位置
         const distance = maxDim * 1.0;
         const height = size.y * 0.6;
-        console.log('設置自動計算的相機位置:', {
-          distance,
-          height,
-          position: {
-            x: distance,
-            y: height,
-            z: distance
-          }
-        });
-        this.camera.position.set(distance, height, distance);
+        const position = { x: distance, y: height, z: distance };
+        const target = { x: 0, y: size.y * 0.35, z: -size.z * 0.2 };
+        this.animateCamera(position, target);
       }
 
-      // 設置相機目標點
-      if (cameraTarget) {
-        console.log('設置指定的相機目標點:', cameraTarget);
-        this.controls.target.set(
-          cameraTarget.x,
-          cameraTarget.y,
-          cameraTarget.z
-        );
-        this.camera.lookAt(
-          cameraTarget.x,
-          cameraTarget.y,
-          cameraTarget.z
-        );
-      } else {
-        // 自動計算目標點
-        const targetY = size.y * 0.35;
-        const targetZ = -size.z * 0.2;
-        this.controls.target.set(0, targetY, targetZ);
-        this.camera.lookAt(0, targetY, targetZ);
-      }
-      
       // 調整光源以跟隨相機和目標點
       const target = cameraTarget || { x: 0, y: size.y * 0.35, z: -size.z * 0.2 };
       this.directionalLight.position.set(
@@ -264,8 +278,22 @@ export class Scene {
   }
 
   private animate(): void {
-    requestAnimationFrame(() => this.animate());
+    requestAnimationFrame(this.animate.bind(this));
+    
+    const delta = this.clock.getDelta();
+    
+    // 更新 TWEEN
+    TWEEN.update();
+    
+    // 更新化學家模型
+    this.chemistModels.forEach(chemist => {
+      chemist.update(delta);
+    });
+    
+    // 更新控制器
     this.controls.update();
+    
+    // 渲染場景
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -292,6 +320,16 @@ export class Scene {
         }
       }
     });
+    
+    // 清理化學家模型
+    this.chemistModels.forEach(chemist => {
+      chemist.dispose();
+    });
+    this.chemistModels.clear();
+    
+    // 移除事件監聽器
+    this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove.bind(this));
+    this.renderer.domElement.removeEventListener('click', this.onMouseClick.bind(this));
   }
 
   createTestModel() {
@@ -299,5 +337,173 @@ export class Scene {
     const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
     return cube;
+  }
+
+  // 添加相機動畫方法
+  private animateCamera(
+    targetPosition: { x: number; y: number; z: number },
+    targetLookAt: { x: number; y: number; z: number },
+    duration: number = 1000
+  ): void {
+    const startPosition = {
+      x: this.camera.position.x,
+      y: this.camera.position.y,
+      z: this.camera.position.z
+    };
+
+    const startLookAt = {
+      x: this.controls.target.x,
+      y: this.controls.target.y,
+      z: this.controls.target.z
+    };
+
+    // 創建位置動畫
+    new TWEEN.Tween(startPosition)
+      .to(targetPosition, duration)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onUpdate(() => {
+        this.camera.position.set(startPosition.x, startPosition.y, startPosition.z);
+      })
+      .start();
+
+    // 創建目標點動畫
+    new TWEEN.Tween(startLookAt)
+      .to(targetLookAt, duration)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onUpdate(() => {
+        this.controls.target.set(startLookAt.x, startLookAt.y, startLookAt.z);
+      })
+      .start();
+  }
+
+  // 切換到預設視角
+  public switchToPreset(presetName: string): void {
+    const preset = this.cameraPresets.find(p => p.name === presetName);
+    if (preset) {
+      this.animateCamera(preset.position, preset.target);
+    }
+  }
+
+  // 重置到預設視角
+  public resetCamera(): void {
+    const defaultPreset = this.cameraPresets[0];
+    if (defaultPreset) {
+      this.animateCamera(defaultPreset.position, defaultPreset.target);
+    }
+  }
+
+  // 獲取所有預設視角
+  public getCameraPresets(): CameraPreset[] {
+    return this.cameraPresets;
+  }
+
+  private onMouseMove(event: MouseEvent): void {
+    // 計算滑鼠在標準化設備坐標中的位置 (-1 到 +1)
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // 更新射線
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    
+    // 檢查是否懸停在化學家模型上
+    let foundIntersection = false;
+    
+    this.chemistModels.forEach(chemist => {
+      const model = chemist.getModel();
+      const highlightMesh = chemist.getHighlightMesh();
+      
+      if (model && highlightMesh) {
+        const intersects = this.raycaster.intersectObject(highlightMesh);
+        
+        if (intersects.length > 0) {
+          foundIntersection = true;
+          chemist.highlight();
+        } else {
+          chemist.unhighlight();
+        }
+      }
+    });
+    
+    // 更新游標樣式
+    this.renderer.domElement.style.cursor = foundIntersection ? 'pointer' : 'default';
+  }
+
+  private onMouseClick(event: MouseEvent): void {
+    // 更新射線
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    
+    // 檢查點擊的化學家
+    let clickedChemist: ChemistModel | null = null;
+    
+    this.chemistModels.forEach(chemist => {
+      const highlightMesh = chemist.getHighlightMesh();
+      if (highlightMesh) {
+        const intersects = this.raycaster.intersectObject(highlightMesh);
+        if (intersects.length > 0) {
+          clickedChemist = chemist;
+        }
+      }
+    });
+    
+    // 觸發化學家選擇事件
+    if (clickedChemist) {
+      this.selectedChemist = clickedChemist;
+      this.onChemistSelected(clickedChemist);
+    }
+  }
+
+  private onChemistSelected(chemist: ChemistModel): void {
+    // 這裡可以觸發自定義事件，讓 Vue 組件知道化學家被選中了
+    const event = new CustomEvent('chemist-selected', {
+      detail: chemist.getConfig()
+    });
+    window.dispatchEvent(event);
+  }
+
+  public async addChemist(config: ChemistModelConfig): Promise<void> {
+    try {
+      const chemist = new ChemistModel(config);
+      await chemist.load();
+      
+      const model = chemist.getModel();
+      const highlightMesh = chemist.getHighlightMesh();
+      
+      if (model) {
+        this.scene.add(model);
+      }
+      
+      if (highlightMesh) {
+        this.scene.add(highlightMesh);
+      }
+      
+      this.chemistModels.set(config.id, chemist);
+    } catch (error) {
+      console.error(`Error adding chemist ${config.name}:`, error);
+      throw error;
+    }
+  }
+
+  public removeChemist(id: number): void {
+    const chemist = this.chemistModels.get(id);
+    if (chemist) {
+      const model = chemist.getModel();
+      const highlightMesh = chemist.getHighlightMesh();
+      
+      if (model) {
+        this.scene.remove(model);
+      }
+      
+      if (highlightMesh) {
+        this.scene.remove(highlightMesh);
+      }
+      
+      chemist.dispose();
+      this.chemistModels.delete(id);
+    }
+  }
+
+  public getSelectedChemist(): ChemistModel | null {
+    return this.selectedChemist;
   }
 }

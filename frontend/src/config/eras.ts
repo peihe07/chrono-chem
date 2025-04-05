@@ -2,6 +2,7 @@ export interface EraConfig {
   id: number;
   title: string;
   description: string;
+  year: number;
   modelPath: string;
   modelScale: { x: number; y: number; z: number };
   cameraPosition: { x: number; y: number; z: number };
@@ -13,6 +14,7 @@ export const eras: EraConfig[] = [
     id: 1,
     title: '1774 - 普利斯特里實驗室',
     description: '普利斯特里在此發現氧氣。',
+    year: 1774,
     modelPath: '/models/priestley_lab.glb',
     modelScale: { x: 2.0, y: 2.0, z: 2.0 },
     cameraPosition: { 
@@ -30,6 +32,7 @@ export const eras: EraConfig[] = [
     id: 2,
     title: '1869 - 門捷列夫書房',
     description: '門捷列夫整理出元素週期表。',
+    year: 1869,
     modelPath: '/models/mendeleev_study.glb',
     modelScale: { x: 1.8, y: 1.8, z: 1.8 },
     cameraPosition: { 
@@ -47,6 +50,7 @@ export const eras: EraConfig[] = [
     id: 3,
     title: '1898 - 瑪麗居禮實驗室',
     description: '瑪麗居禮發現鐳元素。',
+    year: 1898,
     modelPath: '/models/curie_lab.glb',
     modelScale: { x: 1.3, y: 1.3, z: 1.3 },
     cameraPosition: { 

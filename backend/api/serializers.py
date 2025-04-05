@@ -1,24 +1,30 @@
 from rest_framework import serializers
-from .models import Era, Scientist, Event
+from .models import Era, Chemist, HistoricalEvent, ChatHistory
 
 class EraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Era
-        fields = ['id', 'title', 'year', 'description']
+        fields = '__all__'
 
-class ScientistSimpleSerializer(serializers.ModelSerializer):
+class ChemistSerializer(serializers.ModelSerializer):
+    era_name = serializers.CharField(source='era.name', read_only=True)
+    
     class Meta:
-        model = Scientist
-        fields = ['id', 'name']
+        model = Chemist
+        fields = '__all__'
 
-class ScientistSerializer(serializers.ModelSerializer):
+class HistoricalEventSerializer(serializers.ModelSerializer):
+    era_name = serializers.CharField(source='era.name', read_only=True)
+    chemist_name = serializers.CharField(source='chemist.name', read_only=True)
+    
     class Meta:
-        model = Scientist
-        fields = ['id', 'name', 'birth_year', 'death_year', 'bio', 'era']
+        model = HistoricalEvent
+        fields = '__all__'
 
-class EventSerializer(serializers.ModelSerializer):
-    scientists = ScientistSimpleSerializer(many=True)
-
+class ChatHistorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Event
-        fields = ['id', 'title', 'year', 'description', 'location', 'era', 'scientists']
+        model = ChatHistory
+        fields = '__all__'
+
+class ChatMessageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000)
