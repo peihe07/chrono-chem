@@ -16,16 +16,16 @@ export const eras: EraConfig[] = [
     description: '普利斯特里在此發現氧氣。',
     year: 1774,
     modelPath: '/models/priestley_lab.glb',
-    modelScale: { x: 2.0, y: 2.0, z: 2.0 },
+    modelScale: { x: 11.0, y: 11.0, z: 11 },
     cameraPosition: { 
-      x: 10,      // 調整為更合適的距離
-      y: 8,      // 降低視角高度
-      z: 5       // 保持對稱，形成45度角
+      x: -13,       // 調整到中心位置
+      y: 13.0,     // 保持視角高度
+      z: 3       // 保持向前
     },
     cameraTarget: {
       x: 0,
-      y: 2,      // 提高一點視點，更好觀察實驗台
-      z: -1      // 稍微向前看
+      y: 2.0,     // 看向前方，與相機高度一致
+      z: -3       // 向前看，距離更遠
     }
   },
   {
@@ -34,16 +34,16 @@ export const eras: EraConfig[] = [
     description: '門捷列夫整理出元素週期表。',
     year: 1869,
     modelPath: '/models/mendeleev_study.glb',
-    modelScale: { x: 1.8, y: 1.8, z: 1.8 },
+    modelScale: { x: 50.0, y: 50.0, z: 50.0 },
     cameraPosition: { 
-      x: 10,      // 更近的視角
-      y: 3,      // 略高於桌面
-      z: 4       // 保持對稱，形成45度角
+      x: 2,       // 保持在正中間
+      y: 30.0,     // 進一步降低視角高度
+      z: 6        // 更靠近書房
     },
     cameraTarget: {
       x: 0,
-      y: 1.5,    // 視點略高，可以看到桌面
-      z: -0.5    // 稍微向前看
+      y: 30.0,     // 保持視點高度
+      z: 0        // 看向書房中心
     }
   },
   {
@@ -52,16 +52,16 @@ export const eras: EraConfig[] = [
     description: '瑪麗居禮發現鐳元素。',
     year: 1898,
     modelPath: '/models/curie_lab.glb',
-    modelScale: { x: 1.3, y: 1.3, z: 1.3 },
+    modelScale: { x: 4.0, y: 4.0, z: 4.0 },
     cameraPosition: { 
-      x: 15,      // 從側面觀察
-      y: 3,      // 略高於實驗台
-      z: 5       // 保持對稱，形成45度角
+      x: -1,      // 稍微向左偏移
+      y: 2.5,     // 略高於地面
+      z: -1       // 稍微向前
     },
     cameraTarget: {
       x: 0,
-      y: 1.2,    // 視點對準實驗台
-      z: -0.8    // 向前看
+      y: 2.5,     // 看向前方，與相機高度一致
+      z: -2       // 向前看，但保持適當距離
     }
   }
 ];
