@@ -1,13 +1,28 @@
 from rest_framework import serializers
-from .models import Chemist, ChatHistory
+from .models import Chemist, ChatHistory, HistoricalEvent
 
 class ChatHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatHistory
         fields = ['id', 'role', 'content', 'timestamp']
 
+class HistoricalEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoricalEvent
+        fields = [
+            'id',
+            'title',
+            'description',
+            'year',
+            'event_type',
+            'image_path',
+            'created_at',
+            'updated_at'
+        ]
+
 class ChemistSerializer(serializers.ModelSerializer):
     chat_history = ChatHistorySerializer(many=True, read_only=True)
+    events = HistoricalEventSerializer(many=True, read_only=True)
     position = serializers.SerializerMethodField()
     birth_year = serializers.IntegerField()
     death_year = serializers.IntegerField(allow_null=True)
@@ -29,7 +44,8 @@ class ChemistSerializer(serializers.ModelSerializer):
             'portrait_path',
             'model_path',
             'bio',
-            'chat_history'
+            'chat_history',
+            'events'
         ]
 
     def get_position(self, obj):

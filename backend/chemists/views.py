@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Chemist, ChatHistory
-from .serializers import ChemistSerializer, ChatHistorySerializer
+from .models import Chemist, ChatHistory, HistoricalEvent
+from .serializers import ChemistSerializer, ChatHistorySerializer, HistoricalEventSerializer
 
 class ChemistViewSet(viewsets.ModelViewSet):
     queryset = Chemist.objects.all()
@@ -64,4 +64,25 @@ class ChemistViewSet(viewsets.ModelViewSet):
     def clear_history(self, request, pk=None):
         chemist = self.get_object()
         ChatHistory.objects.filter(chemist=chemist).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT) 
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'])
+    def events(self, request, pk=None):
+        chemist = self.get_object()
+        events = HistoricalEvent.objects.filter(chemist=chemist).order_by('year')
+        serializer = HistoricalEventSerializer(events, many=True)
+        return Response(serializer.data)
+
+class HistoricalEventViewSet(viewsets.ModelViewSet):
+    queryset = HistoricalEvent.objects.all()
+    serializer_class = HistoricalEventSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['year', 'event_type', 'chemist']
+    search_fields = ['title', 'description']
+
+    def get_queryset(self):
+        queryset = HistoricalEvent.objects.all()
+        year = self.request.query_params.get('year', None)
+        if year is not None:
+            queryset = queryset.filter(year=year)
+        return queryset 
