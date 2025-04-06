@@ -26,7 +26,7 @@
 - [x] 與 GPT-4 API（或 mock JSON）整合對話功能
 
 ### 4. Pinia 狀態管理
-- [ ] 建立 Pinia store 管理：
+- [x] 建立 Pinia store 管理：
   - 當前年份 / 場景
   - 活躍化學家 / 對話狀態
   - 已完成事件清單（未來可用於成就系統）
@@ -36,26 +36,26 @@
 ## 🧠 後端 (Django + DRF)
 
 ### 1. 擴充資料模型
-- [ ] 新增 `Chemist` 模型（包含姓名、生卒年、簡介、代表實驗）
-- [ ] 新增 `HistoricalEvent` 模型（與年份和化學家關聯）
+- [x] 新增 `Chemist` 模型（包含姓名、生卒年、簡介、代表實驗）
+- [x] 新增 `HistoricalEvent` 模型（與年份和化學家關聯）
 
 ### 2. API 設計
-- [ ] `/api/chemists/`：取得所有歷史化學家資訊
-- [ ] `/api/events/?year=1774`：依年份查詢相關事件
-- [ ] `/api/chat/`：提交角色與使用者訊息，回傳 GPT 模擬對話（初期可用 mock）
+- [x] `/api/chemists/`：取得所有歷史化學家資訊
+- [x] `/api/events/?year=1774`：依年份查詢相關事件
+- [x] `/api/chat/`：提交角色與使用者訊息，回傳 GPT 模擬對話（初期可用 mock）
 
 ### 3. 對話模擬（初步整合 GPT）
-- [ ] 建立簡易 GPT 代理 view（或 mock 回傳）
-- [ ] 支援前端傳入化學家名稱與提問內容
-- [ ] 回傳模擬回答（之後再替換為 GPT-4 串接）
+- [x] 建立簡易 GPT 代理 view（或 mock 回傳）
+- [x] 支援前端傳入化學家名稱與提問內容
+- [x] 回傳模擬回答（之後再替換為 GPT-4 串接）
 
 ---
 
 ## 🧪 測試項目
-- [ ] Vue Router 是否正確切換場景
-- [ ] 點擊人物是否能觸發對話彈窗
-- [ ] 對話框是否成功顯示從 API 回傳的文字
-- [ ] API 回傳格式與 Vue 顯示資料是否對應
+- [x] Vue Router 是否正確切換場景
+- [x] 點擊人物是否能觸發對話彈窗
+- [x] 對話框是否成功顯示從 API 回傳的文字
+- [x] API 回傳格式與 Vue 顯示資料是否對應
 
 ---
 
@@ -72,3 +72,52 @@ frontend/
 │   │   └── index.ts                # Vue Router 設定檔
 │   ├── store/
 │   │   └── timeTravel.ts           # 時光旅行狀態管理 (Pinia)
+│   ├── api/
+│   │   ├── chemists.ts             # 化學家相關 API
+│   │   └── __tests__/
+│   │       └── chemists.test.ts    # API 測試
+│   ├── components/__tests__/
+│   │   ├── TimeMachine.test.ts     # 時光機元件測試
+│   │   └── ChemistDialog.test.ts   # 對話框元件測試
+
+## ✅ 測試實作細節
+
+### 1. 時光機測試 (TimeMachine.test.ts)
+- 測試場景切換功能
+  - 切換到 1774 年
+  - 切換到 1869 年
+- 測試年份選項顯示
+  - 確認所有年份選項存在
+  - 確認年份文字正確
+
+### 2. 對話框測試 (ChemistDialog.test.ts)
+- 測試化學家資訊顯示
+  - 確認名稱顯示
+  - 確認描述顯示
+- 測試訊息功能
+  - 發送訊息
+  - 顯示回應
+  - 關閉對話框
+
+### 3. API 整合測試 (chemists.test.ts)
+- 測試化學家列表 API
+  - 獲取化學家列表
+  - 確認資料格式
+- 測試歷史事件 API
+  - 依年份獲取事件
+  - 確認資料格式
+- 測試對話 API
+  - 發送訊息
+  - 接收回應
+  - 確認資料格式
+
+### 4. API 介面定義 (chemists.ts)
+- 定義資料介面
+  - Chemist 介面
+  - HistoricalEvent 介面
+  - ChatMessage 介面
+  - ChatResponse 介面
+- 實作 API 函數
+  - getChemists()
+  - getEvents()
+  - sendMessage()
