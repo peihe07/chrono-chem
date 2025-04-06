@@ -1,0 +1,93 @@
+# 📅 ChronoChem 第三週任務計畫：視覺沉浸 & 多場景支援
+
+## 🎯 核心目標
+- 強化 3D 場景的光影、材質與氣氛
+- 支援多個歷史時代場景切換（至少 2 個以上）
+- 加入背景音效與資源載入優化，提升沉浸體驗
+
+---
+
+## 🔧 前端 (Vue3 + Three.js)
+
+### 1. 視覺強化：燈光與材質
+- [ ] 建立 `threejs/lights.ts` 模組，統一定義光源設定（如 AmbientLight + PointLight）
+- [ ] 套用陰影設定（`castShadow`、`receiveShadow`）
+- [ ] 模型使用 `MeshStandardMaterial`，加入簡易 PBR 材質（玻璃、金屬等）
+- [ ] 使用 `sRGBEncoding`、`ACESToneMapping` 調整顯示效果
+
+### 2. 背景音效整合
+- [ ] 為不同時代加入背景音效（如：火爐聲、筆記聲）
+- [ ] 使用 `AudioListener` 與 `PositionalAudio` 加入空間感
+- [ ] 在 UI 加入音量控制按鈕（可切換靜音/播放）
+
+### 3. 多場景支援與模組化
+- [ ] 將 `Scene1774.ts`, `Scene1869.ts` 拆為獨立模組
+- [ ] 實作 `SceneManager`，根據 `route.params.id` 載入對應場景
+- [ ] 每個場景支援個別人物、背景音、GLTF 模型與實驗描述
+
+### 4. 資源載入優化
+- [ ] 使用 `useGLTFLoader` 封裝 GLTF 載入（支援 loading 狀態）
+- [ ] 加入 `LoadingScreen.vue`，顯示過場動畫或 loading bar
+- [ ] 嘗試使用 `DracoLoader` 或壓縮 GLTF 模型優化速度
+
+---
+
+## 🧠 後端 (Django + DRF)
+
+### 1. 資料欄位擴充
+- [ ] `Era` 模型新增 `soundtrack_url` 欄位
+- [ ] `HistoricalEvent` 模型新增 `location`、`experiment_description`
+
+### 2. API 補強
+- [ ] `/api/era/:id/detail/` 回傳：
+  - GLTF 模型檔案名稱（供前端載入）
+  - 對應人物列表
+  - 時代描述 + 背景音效連結
+
+---
+
+## 🧪 測試項目
+
+### 視覺測試
+- [ ] 不同裝置解析度下的相機與光源效果是否合理
+- [ ] 材質是否有金屬/玻璃反射感
+- [ ] 陰影是否正確落在地面或物體上
+
+### 音效測試
+- [ ] 每個場景背景音效是否能正確播放
+- [ ] 音量控制是否正常運作（音量條或靜音按鈕）
+- [ ] 聲音是否能在切換場景時停止或銜接
+
+### 載入與切換測試
+- [ ] 不同時代切換是否能正確載入模型
+- [ ] loading 畫面是否出現與消失適時
+- [ ] 錯誤資源載入時是否有 fallback 或提示
+
+---
+
+## 📁 前端目錄結構新增建議
+frontend/
+└── src/
+├── threejs/
+│   ├── scenes/
+│   │   ├── Scene1774.ts
+│   │   ├── Scene1869.ts
+│   ├── lights/
+│   │   └── defaultLights.ts
+│   ├── audio/
+│   │   └── ambientSoundManager.ts
+│   ├── loaders/
+│   │   ├── useGLTFLoader.ts
+│   │   ├── useAudioLoader.ts
+├── components/
+│   └── LoadingScreen.vue
+
+---
+
+## ✅ 預期成果
+
+- [ ] 不同歷史場景皆有獨立 3D 模型、光影與音效設定
+- [ ] 前端支援多時代 GLTF 懶載入，切換順暢
+- [ ] 每個場景的音效、光影、材質呈現提升沉浸感
+- [ ] 出現 loading 過場畫面避免白屏
+- [ ] 後端支援對應場景的 GLTF 與音效資料供應

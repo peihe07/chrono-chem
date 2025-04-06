@@ -12,6 +12,8 @@ class Chemist(models.Model):
     birth_year = models.IntegerField(verbose_name="出生年份", default=1800)
     death_year = models.IntegerField(verbose_name="死亡年份", null=True, blank=True)
     portrait_path = models.CharField(max_length=200, verbose_name="肖像路徑", null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="創建時間")
+    updated_at = models.DateTimeField(default=timezone.now, verbose_name="更新時間")
 
     class Meta:
         verbose_name = "化學家"

@@ -4,8 +4,9 @@ export interface Chemist {
   id: number;
   name: string;
   birth_year: number;
-  death_year: number;
-  bio?: string;
+  death_year?: number;
+  description: string;
+  era: number;
   portrait_path?: string;
   model_path?: string;
   position: {
@@ -53,11 +54,46 @@ api.interceptors.response.use(
   }
 );
 
-export const fetchEras = () => api.get('eras/');
-export const fetchEvents = (eraId: number) => api.get(`events/?era=${eraId}`);
-export const fetchScientists = async (eraId?: number) => {
-  const params = eraId ? { era: eraId } : undefined;
-  return await api.get<Chemist[]>('/chemists/', { params });
+export const fetchEras = async () => {
+  try {
+    console.log('開始獲取時代數據...');
+    const response = await api.get('eras/');
+    console.log('時代數據:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('獲取時代數據失敗:', error);
+    throw error;
+  }
+};
+
+export const fetchEvents = async (eraId: number) => {
+  try {
+    console.log('開始獲取事件數據，時代ID:', eraId);
+    const response = await api.get(`v2/events/?era=${eraId}`);
+    console.log('事件數據:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('獲取事件數據失敗:', error);
+    throw error;
+  }
+};
+
+export const fetchScientists = async (eraId: number): Promise<Chemist[]> => {
+  try {
+    console.log('開始獲取化學家數據，時代 ID:', eraId);
+    const response = await api.get(`v2/chemists/?era=${eraId}`);
+    console.log('API 響應:', response);
+    if (response.data && Array.isArray(response.data.results)) {
+      console.log('獲取到的化學家數據:', response.data.results);
+      return response.data.results;
+    } else {
+      console.warn('API 響應格式不正確:', response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error('獲取化學家數據時出錯:', error);
+    return [];
+  }
 };
 
 export default api;

@@ -1,9 +1,9 @@
 # 構建階段
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# 安裝構建工具
+# 安裝系統依賴
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -17,32 +17,27 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 生產階段
+# 生產環境
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# 添加非 root 用戶
+# 創建非 root 用戶
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
-# 安裝必要的系統依賴
+# 安裝系統依賴
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 複製虛擬環境
+# 從構建階段複製虛擬環境
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # 複製應用代碼
 COPY . .
 
-# 設置環境變量
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8001
-
-# 修改目錄權限
+# 設置用戶權限
 RUN chown -R appuser:appgroup /app
 
 # 切換到非 root 用戶
@@ -52,8 +47,8 @@ USER appuser
 EXPOSE 8001
 
 # 健康檢查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+HEALTHCHECK --interval=30s --timeout=3s \
     CMD curl -f http://localhost:8001/api/health/ || exit 1
 
-# 啟動應用
+# 啟動命令
 CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "120", "config.wsgi:application"] 

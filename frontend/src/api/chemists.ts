@@ -3,11 +3,11 @@ import axios from 'axios'
 export interface Chemist {
   id: number
   name: string
-  era: number
-  description: string
   birth_year: number
   death_year?: number
+  description: string
   portrait_path?: string
+  era: number
 }
 
 export interface HistoricalEvent {
@@ -15,9 +15,6 @@ export interface HistoricalEvent {
   title: string
   description: string
   year: number
-  chemist: number
-  event_type: string
-  image_path?: string
 }
 
 export interface ChatMessage {
@@ -27,18 +24,31 @@ export interface ChatMessage {
 }
 
 export interface ChatResponse {
-  user_message: ChatMessage
   assistant_message: ChatMessage
 }
 
-export const getChemists = async (): Promise<Chemist[]> => {
-  const response = await axios.get('/api/chemists/')
-  return response.data
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
 }
 
-export const getEvents = async (year: number): Promise<HistoricalEvent[]> => {
-  const response = await axios.get(`/api/events/?year=${year}`)
-  return response.data
+export const getChemists = async (era?: number): Promise<PaginatedResponse<Chemist>> => {
+  const url = era ? `/api/chemists/?era=${era}` : '/api/chemists/'
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error('獲取化學家數據失敗')
+  }
+  return response.json()
+}
+
+export const getEvents = async (year: number): Promise<PaginatedResponse<HistoricalEvent>> => {
+  const response = await fetch(`/api/events/?year=${year}`)
+  if (!response.ok) {
+    throw new Error('獲取事件數據失敗')
+  }
+  return response.json()
 }
 
 export const sendMessage = async (chemistId: number, content: string): Promise<ChatResponse> => {
