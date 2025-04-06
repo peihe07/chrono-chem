@@ -17,6 +17,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secret-key-here')
 # SECURITY WARNING: update this in production!
 ALLOWED_HOSTS = ['*']
 
+# 端口配置
+PORT = int(os.getenv('PORT', '8001'))
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

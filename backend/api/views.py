@@ -8,6 +8,7 @@ from .serializers import (
     EraSerializer, ChemistSerializer, HistoricalEventSerializer,
     ChatHistorySerializer, ChatMessageSerializer
 )
+from rest_framework.decorators import api_view
 
 class HealthCheck(APIView):
     """
@@ -101,3 +102,7 @@ class SendMessage(generics.CreateAPIView):
             'user_message': ChatHistorySerializer(user_message).data,
             'assistant_message': ChatHistorySerializer(assistant_message).data
         })
+
+@api_view(['GET'])
+def health_check(request):
+    return Response({'status': 'ok'})

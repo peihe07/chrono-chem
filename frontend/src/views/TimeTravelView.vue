@@ -155,7 +155,7 @@ onMounted(async () => {
     
     // 5. 載入化學家數據
     console.log('載入化學家數據...');
-    await loadScientists();
+    await loadScientists(currentEra.value);
     
     // 6. 添加化學家模型
     console.log('添加化學家模型...');
@@ -356,53 +356,25 @@ const getCameraIndicatorStyle = (preset: CameraPreset) => {
 };
 
 // 載入化學家數據
-const loadScientists = async () => {
+const loadScientists = async (eraId: number) => {
   try {
-    console.log('開始載入化學家數據，時代ID:', currentEra.value);
-    const response = await fetchScientists(currentEra.value);
+    console.log('開始載入化學家數據，時代ID:', eraId);
+    const response = await fetchScientists(eraId);
     console.log('API 響應:', response);
-    console.log('API 響應數據類型:', typeof response.data);
-    console.log('API 響應數據結構:', JSON.stringify(response.data, null, 2));
     
-    if (!response.data) {
-      console.error('API 響應中沒有 data 字段');
+    if (response && response.results) {
+      console.log('化學家數據:', response.results);
+      scientists.value = response.results;
+      return response.results;
+    } else {
+      console.warn('API 響應格式不正確:', response);
       scientists.value = [];
-      return;
+      return [];
     }
-    
-    // 如果 response.data 是對象而不是數組，嘗試提取數組
-    let dataArray = response.data;
-    if (typeof response.data === 'object' && !Array.isArray(response.data)) {
-      console.log('嘗試從響應對象中提取數組...');
-      const data = response.data as Record<string, any>;
-      // 檢查常見的數據結構模式
-      if (data.results && Array.isArray(data.results)) {
-        dataArray = data.results;
-      } else if (data.data && Array.isArray(data.data)) {
-        dataArray = data.data;
-      } else if (data.items && Array.isArray(data.items)) {
-        dataArray = data.items;
-      } else {
-        // 如果找不到數組，將對象轉換為數組
-        dataArray = Object.values(data);
-      }
-    }
-    
-    if (!Array.isArray(dataArray)) {
-      console.error('無法獲取有效的數組數據:', typeof dataArray);
-      scientists.value = [];
-      return;
-    }
-    
-    scientists.value = dataArray;
-    console.log('化學家數據載入成功:', {
-      count: scientists.value.length,
-      data: scientists.value
-    });
   } catch (error) {
     console.error('載入化學家數據失敗:', error);
-    handleError(error, '載入化學家數據');
     scientists.value = [];
+    return [];
   }
 };
 
