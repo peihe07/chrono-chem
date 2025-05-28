@@ -101,6 +101,19 @@ def create_test_data():
         death_year=1934,
         portrait_path="portraits/curie.jpg"
     )
+
+    chemist4 = Chemist.objects.create(
+        name="羅伯特·波義耳",
+        era=1,
+        description="愛爾蘭化學家，被稱為現代化學的奠基人之一。他提出了波義耳定律，並首次將化學定義為一門科學。",
+        position_x=0,
+        position_y=0,
+        position_z=0,
+        model_path="models/boyle.glb",
+        birth_year=1627,
+        death_year=1691,
+        portrait_path="portraits/boyle.jpg"
+    )
     
     # 創建歷史事件
     HistoricalEvent.objects.create(
@@ -129,6 +142,15 @@ def create_test_data():
         event_type="discovery",
         image_path="events/radium_discovery.jpg"
     )
+
+    HistoricalEvent.objects.create(
+        title="發表波義耳定律",
+        description="波義耳發現了氣體壓強與體積的關係，為現代氣體化學奠定了基礎。",
+        year=1662,
+        chemist=chemist4,
+        event_type="discovery",
+        image_path="events/boyle_law.jpg"
+    )
     
     # 創建聊天記錄
     ChatHistory.objects.create(
@@ -149,5 +171,12 @@ def create_test_data():
         chemist=chemist3,
         role="assistant",
         content="你好！我是瑪麗·居里。我對放射性元素的研究很感興趣，您想了解什麼呢？",
+        timestamp=timezone.now()
+    )
+
+    ChatHistory.objects.create(
+        chemist=chemist4,
+        role="assistant",
+        content="您好！我是羅伯特·波義耳。讓我們一起探索氣體化學的奧秘吧！",
         timestamp=timezone.now()
     ) 

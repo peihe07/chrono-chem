@@ -4,11 +4,11 @@ export interface Chemist {
   id: number;
   name: string;
   birth_year: number;
-  death_year?: number;
+  death_year: number;
   description: string;
   era: number;
-  portrait_path?: string;
-  model_path?: string;
+  portrait_path: string;
+  model_path: string;
   position: {
     x: number;
     y: number;
@@ -19,10 +19,8 @@ export interface Chemist {
 const api = axios.create({
   baseURL: 'http://localhost:8000/api/',
   timeout: 10000,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
   }
 });
 
@@ -81,11 +79,11 @@ export const fetchEvents = async (eraId: number) => {
 export const fetchScientists = async (eraId: number): Promise<Chemist[]> => {
   try {
     console.log('開始獲取化學家數據，時代 ID:', eraId);
-    const response = await api.get(`v2/chemists/?era=${eraId}`);
-    console.log('API 響應:', response);
-    if (response.data && Array.isArray(response.data.results)) {
-      console.log('獲取到的化學家數據:', response.data.results);
-      return response.data.results;
+    const response = await api.get<{ data: Chemist[] }>(`v2/chemists/?era=${eraId}`);
+    console.log('API 響應:', response.data);
+    if (response.data && Array.isArray(response.data.data)) {
+      console.log('獲取到的化學家數據:', response.data.data);
+      return response.data.data;
     } else {
       console.warn('API 響應格式不正確:', response.data);
       return [];

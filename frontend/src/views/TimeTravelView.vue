@@ -47,6 +47,7 @@ import type { CameraPreset } from '@/threejs/scene';
 import { useRouter } from 'vue-router';
 import { eras } from '@/config/eras';
 import { fetchEras, fetchEvents, fetchScientists } from '@/api';
+import type { Chemist } from '@/api';
 import TimeSelector from '@/components/TimeSelector.vue';
 import ChemistDialog from '@/components/ChemistDialog.vue';
 import type { ChemistModelConfig } from '@/threejs/ChemistModel';
@@ -72,23 +73,8 @@ interface Event {
   location: string;
 }
 
-interface Scientist {
-  id: number;
-  name: string;
-  birth_year: number;
-  death_year: number;
-  bio?: string;
-  portrait_path?: string;
-  model_path?: string;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
-}
-
 const events = ref<Event[]>([]);
-const scientists = ref<Scientist[]>([]);
+const scientists = ref<Chemist[]>([]);
 const currentEraData = computed(() => {
   return eras.find(era => era.id === currentEra.value);
 });
@@ -279,7 +265,7 @@ async function loadEraModel(eraId: number) {
         fetchScientists(eraId).catch(err => {
           console.error('載入化學家資料失敗:', err);
           handleError(err, '載入化學家資料');
-          return { data: [] };
+          return [];
         }),
       ]);
       
@@ -288,8 +274,8 @@ async function loadEraModel(eraId: number) {
         console.log('事件資料載入成功:', events.value.length, '條記錄');
       }
       
-      if (scientistsRes.data) {
-        scientists.value = scientistsRes.data as Scientist[];
+      if (Array.isArray(scientistsRes)) {
+        scientists.value = scientistsRes as Chemist[];
         console.log('化學家資料載入成功:', scientists.value.length, '條記錄');
       }
       
@@ -362,10 +348,10 @@ const loadScientists = async (eraId: number) => {
     const response = await fetchScientists(eraId);
     console.log('API 響應:', response);
     
-    if (response && response.results) {
-      console.log('化學家數據:', response.results);
-      scientists.value = response.results;
-      return response.results;
+    if (Array.isArray(response)) {
+      console.log('化學家數據:', response);
+      scientists.value = response as Chemist[];
+      return response;
     } else {
       console.warn('API 響應格式不正確:', response);
       scientists.value = [];
@@ -373,6 +359,7 @@ const loadScientists = async (eraId: number) => {
     }
   } catch (error) {
     console.error('載入化學家數據失敗:', error);
+    handleError(error, '載入化學家數據');
     scientists.value = [];
     return [];
   }
@@ -381,57 +368,40 @@ const loadScientists = async (eraId: number) => {
 // 添加化學家模型
 const addChemistModels = async () => {
   if (!scene) {
-    console.error('場景未初始化，無法添加化學家模型');
+    console.error('場景未初始化');
     return;
   }
+
+  console.log('添加化學家模型，數量:', scientists.value.length);
   
-  console.log('化學家數據:', scientists.value);
-  
-  if (!Array.isArray(scientists.value)) {
-    console.error('化學家數據格式錯誤，預期是數組但收到:', typeof scientists.value);
-    scientists.value = [];  // 重置為空數組
-    return;
-  }
-  
-  if (scientists.value.length === 0) {
-    console.log('沒有化學家數據，跳過添加化學家模型');
-    return;
-  }
-  
-  console.log('開始添加化學家模型，共', scientists.value.length, '個');
-  
-  for (const scientist of scientists.value) {
+  for (const chemist of scientists.value) {
+    console.log('處理化學家:', chemist);
+    
+    const chemistConfig: ChemistModelConfig = {
+      id: chemist.id,
+      name: chemist.name,
+      position: new THREE.Vector3(
+        chemist.position.x,
+        chemist.position.y,
+        chemist.position.z
+      ),
+      modelPath: chemist.model_path,
+      portraitPath: chemist.portrait_path,
+      bio: chemist.description,
+      birth_year: chemist.birth_year,
+      death_year: chemist.death_year,
+      era: chemist.era,
+      description: chemist.description
+    };
+
     try {
-      if (!scientist || typeof scientist !== 'object') {
-        console.error('無效的化學家數據:', scientist);
-        continue;
-      }
-      
-      console.log('添加化學家模型:', scientist.name);
-      const chemistConfig: ChemistModelConfig = {
-        id: scientist.id,
-        name: scientist.name,
-        position: new THREE.Vector3(
-          scientist.position.x,
-          scientist.position.y,
-          scientist.position.z
-        ),
-        birth_year: scientist.birth_year,
-        death_year: scientist.death_year,
-        bio: scientist.bio || '',
-        portraitPath: scientist.portrait_path || '',
-        modelPath: scientist.model_path || ''
-      };
-      
       await scene.addChemist(chemistConfig);
-      console.log('化學家模型添加成功:', scientist.name);
+      console.log('化學家模型添加成功:', chemist.name);
     } catch (error) {
-      console.error(`添加化學家 ${scientist.name} 失敗:`, error);
-      handleError(error, `添加化學家 ${scientist.name}`);
+      console.error('添加化學家模型失敗:', error);
+      handleError(error, `添加化學家模型 ${chemist.name}`);
     }
   }
-  
-  console.log('化學家模型添加完成');
 };
 
 // 處理化學家選擇

@@ -7,11 +7,13 @@ export interface ChemistModelConfig {
   position: THREE.Vector3;
   rotation?: THREE.Euler;
   scale?: THREE.Vector3;
-  modelPath?: string;
-  portraitPath?: string;
-  bio?: string;
+  modelPath: string;
+  portraitPath: string;
+  bio: string;
   birth_year: number;
   death_year: number;
+  era: number;
+  description: string;
 }
 
 export class ChemistModel {

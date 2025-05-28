@@ -83,6 +83,10 @@ class HistoricalEventViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = HistoricalEvent.objects.all()
         year = self.request.query_params.get('year', None)
+        era = self.request.query_params.get('era', None)
+        
         if year is not None:
             queryset = queryset.filter(year=year)
+        if era is not None:
+            queryset = queryset.filter(chemist__era=era)
         return queryset 
