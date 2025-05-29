@@ -3,7 +3,12 @@ import { sendMessage, getChemists, getEvents } from '../chemists'
 import axios from 'axios'
 
 vi.mock('axios')
+vi.mock('global', () => ({
+  fetch: vi.fn()
+}))
+
 const mockedAxios = axios as any
+const mockedFetch = global.fetch as any
 
 describe('Chemists API', () => {
   beforeEach(() => {
@@ -11,37 +16,53 @@ describe('Chemists API', () => {
   })
 
   it('應該能獲取化學家列表', async () => {
-    const mockChemists = [
-      {
-        id: 1,
-        name: '安東尼·拉瓦錫',
-        era: 1774,
-        description: '法國化學家'
-      }
-    ]
+    const mockChemists = {
+      count: 1,
+      next: null,
+      previous: null,
+      results: [
+        {
+          id: 1,
+          name: '安東尼·拉瓦錫',
+          era: 1774,
+          description: '法國化學家'
+        }
+      ]
+    }
 
-    mockedAxios.get.mockResolvedValueOnce({ data: mockChemists })
+    mockedFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockChemists)
+    })
 
     const result = await getChemists()
     expect(result).toEqual(mockChemists)
-    expect(mockedAxios.get).toHaveBeenCalledWith('/api/chemists/')
+    expect(mockedFetch).toHaveBeenCalledWith('/api/chemists/')
   })
 
   it('應該能獲取特定年份的事件', async () => {
-    const mockEvents = [
-      {
-        id: 1,
-        title: '發現氧氣',
-        year: 1774,
-        description: '拉瓦錫發現氧氣'
-      }
-    ]
+    const mockEvents = {
+      count: 1,
+      next: null,
+      previous: null,
+      results: [
+        {
+          id: 1,
+          title: '發現氧氣',
+          year: 1774,
+          description: '拉瓦錫發現氧氣'
+        }
+      ]
+    }
 
-    mockedAxios.get.mockResolvedValueOnce({ data: mockEvents })
+    mockedFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockEvents)
+    })
 
     const result = await getEvents(1774)
     expect(result).toEqual(mockEvents)
-    expect(mockedAxios.get).toHaveBeenCalledWith('/api/events/?year=1774')
+    expect(mockedFetch).toHaveBeenCalledWith('/api/events/?year=1774')
   })
 
   it('應該能發送訊息給化學家', async () => {

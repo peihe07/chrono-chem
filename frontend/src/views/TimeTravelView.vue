@@ -35,24 +35,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { Scene } from '@/threejs/scene';
-import type { CameraPreset } from '@/threejs/scene';
-import { useRouter } from 'vue-router';
 import { eras } from '@/config/eras';
-import {  fetchEvents, fetchScientists } from '@/api';
 import type { Chemist } from '@/types/index';
 import TimeSelector from '@/components/TimeSelector.vue';
 import ChemistDialog from '@/components/ChemistDialog.vue';
-import ChemistPortrait from '@/components/ChemistPortrait.vue';
-import type { ChemistModelConfig } from '@/threejs/ChemistModel';
 
-const router = useRouter();
 const container = ref<HTMLElement | null>(null);
 const currentEra = ref<number>(1);
 const isLoading = ref(false);
-const totalEras = eras.length;
 
 // 監聽 currentEra 的變化
 watch(currentEra, async (newEraId) => {
@@ -69,9 +62,6 @@ interface Event {
 
 const events = ref<Event[]>([]);
 const scientists = ref<Chemist[]>([]);
-const currentEraData = computed(() => {
-  return eras.find(era => era.id === currentEra.value);
-});
 
 let scene: Scene | null = null;
 const error = ref<string>('');
@@ -237,78 +227,11 @@ const loadEraModel = async (eraId: number) => {
   }
 };
 
-const navigateToEra = (eraId: number) => {
-  if (eraId >= 1 && eraId <= totalEras) {
-    currentEra.value = eraId;
-    router.push(`/era/${eraId}`);
-  }
-};
 
-const getCameraIndicatorStyle = (preset: CameraPreset) => {
-  // 將相機位置轉換為預覽圖中的位置
-  const scale = 0.1; // 縮放因子
-  const centerX = 50; // 預覽圖中心點 X
-  const centerY = 50; // 預覽圖中心點 Y
-  
-  const x = centerX + preset.position.x * scale;
-  const y = centerY - preset.position.z * scale; // 注意 Y 和 Z 的轉換
-  
-  return {
-    left: `${x}%`,
-    top: `${y}%`,
-    transform: `translate(-50%, -50%) rotate(${Math.atan2(preset.position.x, preset.position.z) * (180 / Math.PI)}deg)`
-  };
-};
 
 // 載入化學家數據
-const loadScientists = async (eraId: number) => {
-  try {
-    console.log('開始載入化學家數據，時代ID:', eraId);
-    const response = await fetchScientists(eraId);
-    console.log('API 響應:', response);
-    
-    if (Array.isArray(response)) {
-      console.log('化學家數據:', response);
-      scientists.value = response as Chemist[];
-      return response;
-    } else {
-      console.warn('API 響應格式不正確:', response);
-      scientists.value = [];
-      return [];
-    }
-  } catch (error) {
-    console.error('載入化學家數據失敗:', error);
-    handleError(error, '載入化學家數據');
-    scientists.value = [];
-    return [];
-  }
-};
 
 // 添加化學家模型
-const addChemistModel = async (chemist: Chemist) => {
-  if (!scene) return;
-  
-  try {
-    const config: ChemistModelConfig = {
-      id: chemist.id,
-      name: chemist.name,
-      modelPath: chemist.model_path,
-      position: new THREE.Vector3(chemist.position.x, chemist.position.y, chemist.position.z),
-      scale: new THREE.Vector3(1, 1, 1),
-      portraitPath: chemist.portrait_path,
-      bio: chemist.description,
-      birth_year: chemist.birth_year,
-      death_year: chemist.death_year,
-      era: chemist.era,
-      description: chemist.description
-    };
-    
-    await scene.addChemist(config);
-  } catch (error) {
-    console.error('添加化學家模型失敗:', error);
-    handleError(error, '添加化學家模型');
-  }
-};
 
 // 初始化
 onMounted(async () => {

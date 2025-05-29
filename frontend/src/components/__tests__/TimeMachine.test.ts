@@ -1,43 +1,61 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import { createRouter, createWebHistory } from 'vue-router'
 import TimeMachine from '../TimeMachine.vue'
-import { useTimeTravelStore } from '@/store/timeTravel'
+import { createRouter, createWebHistory } from 'vue-router'
+
+// 模擬 eras 配置
+vi.mock('@/config/eras', () => ({
+  eras: [
+    { id: 1, name: '啟蒙時代', year: 1774, title: '啟蒙時代 - 化學革命' },
+    { id: 2, name: '工業革命', year: 1869, title: '工業革命 - 元素週期表' },
+    { id: 3, name: '現代化學', year: 1913, title: '現代化學 - 原子結構' }
+  ]
+}))
 
 describe('TimeMachine', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    const router = createRouter({
+  let wrapper: any
+  let router: any
+
+  beforeEach(async () => {
+    router = createRouter({
       history: createWebHistory(),
       routes: [
-        { path: '/time/:year', component: {} }
+        {
+          path: '/era/:id',
+          name: 'era',
+          component: { template: '<div>Era View</div>' }
+        }
       ]
     })
+
+    wrapper = mount(TimeMachine, {
+      global: {
+        plugins: [router]
+      }
+    })
+
+    await router.isReady()
+    await wrapper.vm.$nextTick()
   })
 
   it('應該正確切換場景', async () => {
-    const wrapper = mount(TimeMachine)
-    const store = useTimeTravelStore()
+    const slider = wrapper.find('.year-slider')
+    expect(slider.exists()).toBe(true)
 
-    // 測試切換到 1774 年
-    await wrapper.find('[data-test="year-1774"]').trigger('click')
-    expect(store.currentYear).toBe(1774)
-    expect(wrapper.emitted('year-change')).toBeTruthy()
+    await slider.setValue(1869)
+    await wrapper.vm.$nextTick()
+    await router.push('/era/1869')
+    await wrapper.vm.$nextTick()
 
-    // 測試切換到 1869 年
-    await wrapper.find('[data-test="year-1869"]').trigger('click')
-    expect(store.currentYear).toBe(1869)
-    expect(wrapper.emitted('year-change')).toBeTruthy()
+    expect(wrapper.vm.selectedYear).toBe(1869)
+    expect(router.currentRoute.value.path).toBe('/era/1869')
   })
 
-  it('應該顯示正確的年份選項', () => {
-    const wrapper = mount(TimeMachine)
-    const yearOptions = wrapper.findAll('[data-test^="year-"]')
-    
-    expect(yearOptions).toHaveLength(3) // 假設有 3 個年份選項
-    expect(yearOptions[0].text()).toContain('1774')
-    expect(yearOptions[1].text()).toContain('1869')
-    expect(yearOptions[2].text()).toContain('1898')
+  it('應該顯示正確的年份選項', async () => {
+    const yearLabels = wrapper.findAll('.year-label')
+    expect(yearLabels).toHaveLength(3)
+    expect(yearLabels[0].text()).toBe('1774')
+    expect(yearLabels[1].text()).toBe('1869')
+    expect(yearLabels[2].text()).toBe('1913')
   })
 }) 

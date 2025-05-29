@@ -32,15 +32,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { eras } from '@/config/eras'
 
 const router = useRouter()
+const route = useRoute()
 const selectedYear = ref(1774)
 
 const minYear = computed(() => Math.min(...eras.map(era => era.year)))
 const maxYear = computed(() => Math.max(...eras.map(era => era.year)))
+
+onMounted(() => {
+  const year = parseInt(route.params.id as string)
+  if (!isNaN(year)) {
+    selectedYear.value = year
+  }
+})
 
 function handleYearChange() {
   const closestEra = eras.reduce((prev, curr) => {

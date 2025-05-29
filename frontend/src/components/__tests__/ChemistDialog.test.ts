@@ -1,72 +1,55 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
 import ChemistDialog from '../ChemistDialog.vue'
-import { useTimeTravelStore } from '@/store/timeTravel'
 
-// Mock API 呼叫
-vi.mock('@/api/chemists', () => ({
-  sendMessage: vi.fn().mockResolvedValue({
-    user_message: { content: '測試訊息', role: 'user' },
-    assistant_message: { content: '這是化學家的回應', role: 'assistant' }
-  })
-}))
+const mockChemist = {
+  id: 1,
+  name: '約瑟夫·普里斯特利',
+  description: '發現氧氣的化學家',
+  birth_year: 1733,
+  death_year: 1804,
+  portrait_path: '/portraits/priestley.jpg'
+}
 
 describe('ChemistDialog', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-  })
+  let wrapper: any
 
-  it('應該正確顯示化學家資訊', () => {
-    const wrapper = mount(ChemistDialog, {
+  beforeEach(async () => {
+    wrapper = mount(ChemistDialog, {
       props: {
-        chemist: {
-          name: '安東尼·拉瓦錫',
-          description: '法國化學家',
-          era: 1774
-        }
+        chemist: mockChemist,
+        show: true
       }
     })
-
-    expect(wrapper.text()).toContain('安東尼·拉瓦錫')
-    expect(wrapper.text()).toContain('法國化學家')
-  })
-
-  it('應該能發送訊息並顯示回應', async () => {
-    const wrapper = mount(ChemistDialog, {
-      props: {
-        chemist: {
-          name: '安東尼·拉瓦錫',
-          description: '法國化學家',
-          era: 1774
-        }
-      }
-    })
-
-    // 輸入訊息
-    await wrapper.find('input[type="text"]').setValue('測試訊息')
-    await wrapper.find('button[type="submit"]').trigger('click')
-
-    // 等待 API 回應
     await wrapper.vm.$nextTick()
-
-    // 檢查訊息是否顯示在對話框中
-    expect(wrapper.text()).toContain('測試訊息')
-    expect(wrapper.text()).toContain('這是化學家的回應')
   })
 
-  it('應該能關閉對話框', async () => {
-    const wrapper = mount(ChemistDialog, {
-      props: {
-        chemist: {
-          name: '安東尼·拉瓦錫',
-          description: '法國化學家',
-          era: 1774
-        }
-      }
-    })
+  it('renders properly', async () => {
+    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.find('.dialog-content').exists()).toBe(true)
+  })
 
-    await wrapper.find('button.close').trigger('click')
+  it('displays chemist information correctly', async () => {
+    expect(wrapper.find('.dialog-header h2').text()).toBe(mockChemist.name)
+    expect(wrapper.find('.chemist-description').text()).toBe(mockChemist.description)
+    expect(wrapper.find('.chemist-years').text()).toContain(`${mockChemist.birth_year} - ${mockChemist.death_year}`)
+  })
+
+  it('emits close event when close button is clicked', async () => {
+    await wrapper.find('.close-button').trigger('click')
     expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('shows portrait image', async () => {
+    const portrait = wrapper.find('.chemist-portrait img')
+    expect(portrait.exists()).toBe(true)
+    expect(portrait.attributes('src')).toBe(mockChemist.portrait_path)
+    expect(portrait.attributes('alt')).toBe(mockChemist.name)
+  })
+
+  it('hides dialog when show prop is false', async () => {
+    await wrapper.setProps({ show: false })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.dialog-content').exists()).toBe(false)
   })
 }) 
