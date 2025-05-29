@@ -1,14 +1,12 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views.era import EraViewSet
+from .views.chemist import ChemistViewSet
+from .views.event import HistoricalEventViewSet
 
-urlpatterns = [
-    path('health/', views.HealthCheck.as_view(), name='health-check'),
-    path('eras/', views.EraList.as_view(), name='era-list'),
-    path('eras/<int:pk>/', views.EraDetail.as_view(), name='era-detail'),
-    path('chemists/', views.ChemistList.as_view(), name='chemist-list'),
-    path('chemists/<int:pk>/', views.ChemistDetail.as_view(), name='chemist-detail'),
-    path('events/', views.HistoricalEventList.as_view(), name='event-list'),
-    path('events/<int:pk>/', views.HistoricalEventDetail.as_view(), name='event-detail'),
-    path('chat/<int:chemist_id>/', views.ChatHistoryList.as_view(), name='chat-history'),
-    path('chat/<int:chemist_id>/send/', views.SendMessage.as_view(), name='send-message'),
-]
+router = DefaultRouter()
+router.register(r'era', EraViewSet, basename='era')
+router.register(r'scientist', ChemistViewSet, basename='scientist')
+router.register(r'event', HistoricalEventViewSet, basename='event')
+
+urlpatterns = router.urls

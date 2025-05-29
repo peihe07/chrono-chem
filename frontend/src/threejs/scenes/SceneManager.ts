@@ -46,7 +46,7 @@ export class SceneManager {
 
     try {
       // 載入 3D 模型
-      const model = await this.gltfLoader.loadModel(config.modelUrl);
+      const model = await this.gltfLoader.loadModel(config.modelUrl) as { scene: THREE.Object3D };
       this.scene.add(model.scene);
 
       // 播放背景音效
@@ -63,8 +63,8 @@ export class SceneManager {
     // 移除所有模型
     while (this.scene.children.length > 0) {
       const object = this.scene.children[0];
-      if (object.type !== 'Light') {
-        this.scene.remove(object);
+      if (object?.type !== 'Light') {
+        this.scene.remove(object!);
       }
     }
 

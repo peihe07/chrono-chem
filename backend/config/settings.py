@@ -31,8 +31,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'corsheaders',
-    'api.apps.ApiConfig',
-    'chemists.apps.ChemistsConfig',
+    'api',
 ]
 
 MIDDLEWARE = [

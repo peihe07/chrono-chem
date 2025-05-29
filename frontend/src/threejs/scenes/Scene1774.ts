@@ -1,4 +1,4 @@
-import { SceneConfig } from './SceneManager';
+import type { SceneConfig } from './SceneManager';
 
 export const Scene1774: SceneConfig = {
   id: '1774',
