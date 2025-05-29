@@ -1,13 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export interface ChemistModelConfig {
   id: number;
   name: string;
-  position: THREE.Vector3;
-  rotation?: THREE.Euler;
-  scale?: THREE.Vector3;
   modelPath: string;
+  position: THREE.Vector3;
+  scale: THREE.Vector3;
   portraitPath: string;
   bio: string;
   birth_year: number;
@@ -42,12 +41,7 @@ export class ChemistModel {
       
       // 設置位置、旋轉和縮放
       this.model.position.copy(this.config.position);
-      if (this.config.rotation) {
-        this.model.rotation.copy(this.config.rotation);
-      }
-      if (this.config.scale) {
-        this.model.scale.copy(this.config.scale);
-      }
+      this.model.scale.copy(this.config.scale);
       
       // 設置動畫
       if (gltf.animations.length > 0) {
@@ -151,7 +145,7 @@ export class ChemistModel {
           object.geometry.dispose();
           if (Array.isArray(object.material)) {
             object.material.forEach(material => material.dispose());
-          } else {
+          } else if (object.material) {
             object.material.dispose();
           }
         }
@@ -160,7 +154,9 @@ export class ChemistModel {
     
     if (this.highlightMesh) {
       this.highlightMesh.geometry.dispose();
-      this.highlightMesh.material.dispose();
+      if (this.highlightMesh.material) {
+        this.highlightMesh.material.dispose();
+      }
     }
     
     this.model = null;

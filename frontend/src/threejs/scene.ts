@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import TWEEN from '@tweenjs/tween.js';
-import { ChemistModel, type ChemistModelConfig } from './ChemistModel';
+import { ChemistModel } from './ChemistModel';
+import type { ChemistModelConfig } from './ChemistModel';
 
 export interface CameraPreset {
   position: { x: number; y: number; z: number };
@@ -440,26 +441,52 @@ export class Scene {
     window.dispatchEvent(event);
   }
 
-  public async addChemist(config: ChemistModelConfig): Promise<void> {
+  public addChemist(config: ChemistModelConfig): void {
     try {
-      const chemist = new ChemistModel(config);
-      await chemist.load();
+      console.log('Adding chemist:', config.name);
       
-      const model = chemist.getModel();
-      const highlightMesh = chemist.getHighlightMesh();
+      // 創建臨時模型（立方體）
+      const geometry = new THREE.BoxGeometry(1, 2, 1);
+      const material = new THREE.MeshPhongMaterial({
+        color: 0x42b883,
+        transparent: true,
+        opacity: 0.7
+      });
       
-      if (model) {
-        this.scene.add(model);
+      const model = new THREE.Mesh(geometry, material);
+      model.position.copy(config.position);
+      model.position.y += 1; // 稍微抬高一點
+      
+      // 創建標籤
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (context) {
+        canvas.width = 256;
+        canvas.height = 64;
+        context.fillStyle = '#ffffff';
+        context.font = '24px Arial';
+        context.textAlign = 'center';
+        context.fillText(config.name, canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const labelMaterial = new THREE.SpriteMaterial({ map: texture });
+        const label = new THREE.Sprite(labelMaterial);
+        label.position.copy(model.position);
+        label.position.y += 2;
+        label.scale.set(2, 0.5, 1);
+        
+        this.scene.add(label);
       }
       
-      if (highlightMesh) {
-        this.scene.add(highlightMesh);
-      }
+      this.scene.add(model);
       
-      this.chemistModels.set(config.id, chemist);
+      // 創建 ChemistModel 實例並保存
+      const chemistModel = new ChemistModel(config);
+      this.chemistModels.set(config.id, chemistModel);
+      
+      console.log('Successfully added chemist:', config.name);
     } catch (error) {
-      console.error(`Error adding chemist ${config.name}:`, error);
-      throw error;
+      console.error('Error adding chemist:', error);
     }
   }
 
@@ -544,5 +571,13 @@ export class Scene {
     this.directionalLight.position.copy(this.camera.position);
     
     console.log('場景清除完成');
+  }
+
+  public getScene(): THREE.Scene {
+    return this.scene;
+  }
+
+  public getChemistModel(id: number): ChemistModel | undefined {
+    return this.chemistModels.get(id);
   }
 }

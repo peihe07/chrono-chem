@@ -2,6 +2,9 @@ import { Scene } from 'three';
 import { DefaultLights } from '../lights/defaultLights';
 import { AmbientSoundManager } from '../audio/ambientSoundManager';
 import { useGLTFLoader } from '../loaders/useGLTFLoader';
+import { useCamera } from '../camera/useCamera';
+import { watch } from 'vue';
+import * as THREE from 'three';
 
 export interface SceneConfig {
   id: string;
@@ -17,15 +20,25 @@ export class SceneManager {
   private soundManager: AmbientSoundManager;
   private gltfLoader: ReturnType<typeof useGLTFLoader>;
   private currentSceneId: string | null = null;
+  private camera: ReturnType<typeof useCamera>;
 
   constructor() {
     this.scene = new Scene();
     this.lights = new DefaultLights();
     this.soundManager = new AmbientSoundManager();
     this.gltfLoader = useGLTFLoader();
+    this.camera = useCamera();
 
     // 添加默認光源
     this.lights.getLights().forEach(light => this.scene.add(light));
+
+    watch(this.camera.position, (newPosition) => {
+      console.log('相機位置更新:', newPosition);
+    });
+
+    watch(this.camera.isAnimating, (animating) => {
+      console.log('相機動畫狀態:', animating);
+    });
   }
 
   public getScene(): Scene {
@@ -82,5 +95,16 @@ export class SceneManager {
 
   public isLoading(): boolean {
     return this.gltfLoader.isLoading.value;
+  }
+
+  public animateTo(config: {
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number };
+    zoom?: number;
+    target?: { x: number; y: number; z: number };
+    duration?: number;
+    easing?: (amount: number) => number;
+  }): void {
+    this.camera.animateTo(config);
   }
 } 
