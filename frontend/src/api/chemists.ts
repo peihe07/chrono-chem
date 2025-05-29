@@ -1,57 +1,106 @@
 import axios from 'axios'
 
+// 設置 axios 的基礎 URL
+axios.defaults.baseURL = 'http://localhost:8002/api/v1'
+
+// 化學家介面
 export interface Chemist {
   id: number
   name: string
   birth_year: number
-  death_year?: number
-  description: string
-  portrait_path?: string
+  death_year: number
+  nationality: string
+  major_achievements: string
+  discoveries: string[]
+  image_url: string
+  model_url: string
   era: number
 }
 
+// 歷史事件介面
 export interface HistoricalEvent {
   id: number
+  year: number
   title: string
   description: string
-  year: number
+  significance: string
+  related_chemists: number[]
 }
 
+// 聊天訊息介面
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
-  timestamp: number
+  timestamp: string
 }
 
+// 聊天回應介面
 export interface ChatResponse {
-  assistant_message: ChatMessage
-}
-
-export interface PaginatedResponse<T> {
-  count: number
-  next: string | null
-  previous: string | null
-  results: T[]
-}
-
-export const getChemists = async (era?: number): Promise<PaginatedResponse<Chemist>> => {
-  const url = era ? `/api/chemists/?era=${era}` : '/api/chemists/'
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error('獲取化學家數據失敗')
+  status: string
+  data: {
+    message: string
   }
-  return response.json()
+  message: string
 }
 
-export const getEvents = async (year: number): Promise<PaginatedResponse<HistoricalEvent>> => {
-  const response = await fetch(`/api/events/?year=${year}`)
-  if (!response.ok) {
-    throw new Error('獲取事件數據失敗')
+// 聊天歷史回應介面
+export interface ChatHistoryResponse {
+  status: string
+  data: ChatMessage[]
+}
+
+// 獲取化學家列表
+export const getChemists = async (): Promise<Chemist[]> => {
+  try {
+    const response = await axios.get('/chemists/')
+    return response.data
+  } catch (error) {
+    console.error('獲取化學家列表失敗:', error)
+    throw error
   }
-  return response.json()
 }
 
-export const sendMessage = async (chemistId: number, content: string): Promise<ChatResponse> => {
-  const response = await axios.post(`/api/chemists/${chemistId}/send_message/`, { content })
-  return response.data
+// 獲取特定年份的事件
+export const getEvents = async (year: number): Promise<HistoricalEvent[]> => {
+  try {
+    const response = await axios.get(`/events/?year=${year}`)
+    return response.data
+  } catch (error) {
+    console.error('獲取歷史事件失敗:', error)
+    throw error
+  }
+}
+
+// 發送訊息給化學家
+export const sendMessage = async (chemistId: number, message: string): Promise<ChatResponse> => {
+  try {
+    const response = await axios.post(`/chemists/${chemistId}/send_message/`, {
+      content: message
+    })
+    return response.data
+  } catch (error) {
+    console.error('發送訊息失敗:', error)
+    throw error
+  }
+}
+
+// 獲取聊天歷史
+export const getChatHistory = async (chemistId: number): Promise<ChatHistoryResponse> => {
+  try {
+    const response = await axios.get(`/chemists/${chemistId}/chat_history/`)
+    return response.data
+  } catch (error) {
+    console.error('獲取聊天歷史失敗:', error)
+    throw error
+  }
+}
+
+// 清除聊天歷史
+export const clearChatHistory = async (chemistId: number): Promise<void> => {
+  try {
+    await axios.delete(`/chemists/${chemistId}/chat_history/`)
+  } catch (error) {
+    console.error('清除聊天歷史失敗:', error)
+    throw error
+  }
 } 
