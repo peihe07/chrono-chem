@@ -97,5 +97,8 @@ class AIService:
             return response.choices[0].message.content
             
         except Exception as e:
+            import traceback
             print(f"AI 回應生成失敗: {str(e)}")
+            print("messages:", messages)
+            print(traceback.format_exc())
             return f"抱歉，我現在無法回應您的問題。請稍後再試。" 

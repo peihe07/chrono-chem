@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import TimeTravelView from '../TimeTravelView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import TimeSelector from '@/components/TimeSelector.vue';
-import ChemistDialog from '@/components/ChemistDialog.vue';
 
 // Mock Three.js Scene
 vi.mock('@/threejs/scene', () => ({
@@ -83,7 +81,7 @@ describe('TimeTravelView', () => {
 
   it('changes era when TimeSelector emits update', async () => {
     const newEraId = 2;
-    await wrapper.findComponent(TimeSelector).vm.$emit('update:currentEraId', newEraId);
+    await wrapper.findComponent({ name: 'TimeSelector' }).vm.$emit('update:currentEraId', newEraId);
     expect(wrapper.vm.currentEra).toBe(newEraId);
   });
 
