@@ -1,0 +1,101 @@
+# 📅 ChronoChem 第四週任務計畫：使用者互動與效能優化
+
+## 🎯 核心目標
+- 強化使用者互動體驗（如點擊化學家、事件觸發動畫）
+- 優化前端效能（減少載入時間、提升 FPS）
+- 加入使用者回饋機制（如評分、留言）
+
+---
+
+## 🔧 前端 (Vue3 + Three.js)
+
+### 1. 使用者互動強化
+- [ ] 實作化學家點擊事件，顯示詳細資訊與對話
+- [ ] 加入事件觸發動畫（如實驗過程、發現過程）
+- [ ] 優化 UI 互動（如 hover 效果、過場動畫）
+
+### 2. 效能優化
+- [ ] 使用 `useMemo` 與 `useCallback` 減少重渲染
+- [ ] 實作模型 LOD（Level of Detail）機制
+- [ ] 優化 Three.js 場景（如減少光源數量、使用低面數模型）
+
+### 3. 使用者回饋機制
+- [ ] 加入評分功能（如 1-5 星）
+- [ ] 實作留言系統（可與後端整合）
+- [ ] 加入分享功能（如分享到社群媒體）
+
+---
+
+## 🧠 後端 (Django + DRF)
+
+### 1. 資料庫擴充
+- [ ] 新增 `UserFeedback` 模型，記錄評分與留言
+- [ ] 擴充 `Chemist` 模型，加入互動相關欄位（如點擊次數）
+
+### 2. API 補強
+- [ ] 實作 `/api/feedback/` 端點，支援評分與留言
+- [ ] 加入 `/api/chemist/:id/interact/` 端點，記錄互動數據
+
+---
+
+## 🧪 測試項目
+
+### 互動測試
+- [ ] 化學家點擊事件是否正確觸發
+- [ ] 事件動畫是否流暢
+- [ ] UI 互動是否直覺
+
+### 效能測試
+- [ ] 載入時間是否低於 3 秒
+- [ ] FPS 是否穩定在 60 以上
+- [ ] 記憶體使用是否合理
+
+### 回饋測試
+- [ ] 評分與留言功能是否正常
+- [ ] 分享功能是否正確運作
+
+---
+
+## 📁 前端目錄結構新增建議
+frontend/
+└── src/
+├── components/
+│   ├── ChemistDetail.vue
+│   ├── FeedbackForm.vue
+│   └── ShareButton.vue
+├── hooks/
+│   ├── usePerformance.ts
+│   └── useInteraction.ts
+├── threejs/
+│   ├── interactions/
+│   │   └── chemistInteraction.ts
+│   └── optimizations/
+│       └── lodManager.ts
+
+---
+
+## ✅ 預期成果
+
+- [ ] 使用者可點擊化學家，查看詳細資訊與對話
+- [ ] 事件觸發動畫流暢，提升沉浸感
+- [ ] 前端效能優化，載入時間低於 3 秒
+- [ ] 使用者可評分、留言與分享
+
+---
+
+## 🔄 後端數據庫遷移
+
+### 1. 創建遷移文件
+```bash
+python manage.py makemigrations
+```
+
+### 2. 執行遷移
+```bash
+python manage.py migrate
+```
+
+### 3. 運行測試
+```bash
+python manage.py test
+``` 

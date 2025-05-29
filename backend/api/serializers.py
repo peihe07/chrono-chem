@@ -14,10 +14,10 @@ class HistoricalEventSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
-            'location',
-            'experiment_description',
-            'date',
-            'era',
+            'year',
+            'chemist',
+            'event_type',
+            'image_path',
             'created_at',
             'updated_at'
         ]
@@ -74,7 +74,6 @@ class ChemistSerializer(serializers.ModelSerializer):
             'death_year',
             'portrait_path',
             'model_path',
-            'bio',
             'chat_history',
             'events',
             'created_at',

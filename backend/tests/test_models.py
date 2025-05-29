@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.utils import timezone
-from models import Era, HistoricalEvent
+from api.models import Era, HistoricalEvent, Chemist
 
 class EraModelTest(TestCase):
     def setUp(self):
@@ -25,17 +25,22 @@ class HistoricalEventModelTest(TestCase):
             year=1774,
             description='化學革命的開始'
         )
+        self.chemist = Chemist.objects.create(
+            name='測試化學家',
+            era=1774,
+            description='測試描述'
+        )
         self.event = HistoricalEvent.objects.create(
-            era=self.era,
             title='發現氧氣',
             description='普利斯特里發現氧氣',
-            location='英國利茲',
-            experiment_description='使用凸透鏡加熱氧化汞',
-            date=timezone.now().date()
+            year=1774,
+            chemist=self.chemist,
+            event_type='discovery',
+            image_path='events/test.jpg'
         )
 
     def test_event_creation(self):
         self.assertEqual(self.event.title, '發現氧氣')
-        self.assertEqual(self.event.era, self.era)
+        self.assertEqual(self.event.chemist, self.chemist)
         self.assertTrue(isinstance(self.event, HistoricalEvent))
-        self.assertEqual(str(self.event), f'發現氧氣 ({self.event.date})') 
+        self.assertEqual(str(self.event), f'1774 - 發現氧氣') 
