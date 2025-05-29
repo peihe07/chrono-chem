@@ -155,7 +155,11 @@ export class ChemistModel {
     if (this.highlightMesh) {
       this.highlightMesh.geometry.dispose();
       if (this.highlightMesh.material) {
-        this.highlightMesh.material.dispose();
+        if (Array.isArray(this.highlightMesh.material)) {
+          this.highlightMesh.material.forEach(material => material.dispose());
+        } else {
+          this.highlightMesh.material.dispose();
+        }
       }
     }
     

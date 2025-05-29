@@ -9,7 +9,10 @@
                :key="scientist.id" 
                class="chemist-card"
                @click="selectChemist(scientist)">
-            <img :src="scientist.portrait_path" :alt="scientist.name" class="chemist-portrait">
+            <ChemistPortrait 
+              :portrait-path="scientist.portrait_path"
+              :name="scientist.name"
+            />
             <div class="chemist-info">
               <h3>{{ scientist.name }}</h3>
               <p>{{ scientist.description }}</p>
@@ -59,6 +62,7 @@ import {  fetchEvents, fetchScientists } from '@/api';
 import type { Chemist } from '@/types/index';
 import TimeSelector from '@/components/TimeSelector.vue';
 import ChemistDialog from '@/components/ChemistDialog.vue';
+import ChemistPortrait from '@/components/ChemistPortrait.vue';
 import type { ChemistModelConfig } from '@/threejs/ChemistModel';
 
 const router = useRouter();
@@ -115,17 +119,44 @@ const loadEraModel = async (eraId: number) => {
     if (!era) {
       throw new Error(`找不到時代 ID: ${eraId}`);
     }
-    
+  
     if (!scene) {
-      scene = new Scene(container.value!);
+      if (!container.value) {
+        throw new Error('找不到場景容器元素');
+      }
+      scene = new Scene(container.value);
+      console.log('場景已創建');
     }
+    
+    console.log('開始載入模型:', era.modelPath);
+    
+    // 調整相機設置
+    const cameraPosition = new THREE.Vector3(
+      era.cameraPosition.x,
+      era.cameraPosition.y,
+      era.cameraPosition.z
+    );
+    
+    const cameraTarget = new THREE.Vector3(
+      era.cameraTarget?.x || 0,
+      era.cameraTarget?.y || 0,
+      era.cameraTarget?.z || 0
+    );
+    
+    // 調整模型縮放
+    const modelScale = new THREE.Vector3(
+      era.modelScale.x,
+      era.modelScale.y,
+      era.modelScale.z
+    );
     
     await scene.loadModel(
       era.modelPath,
-      era.modelScale,
-      era.cameraPosition,
-      era.cameraTarget
+      modelScale,
+      cameraPosition,
+      cameraTarget
     );
+    console.log('模型載入完成');
     
     // 直接使用測試資料
     const testScientists = [
@@ -210,34 +241,6 @@ const loadEraModel = async (eraId: number) => {
       return chemist && chemist.era === eraId;
     });
     
-    // 清除場景中的化學家模型
-    if (scene) {
-      scene.clearScene();
-    }
-    
-    // 添加當前時代的化學家模型
-    for (const scientist of scientists.value) {
-      try {
-        const config: ChemistModelConfig = {
-          id: scientist.id,
-          name: scientist.name,
-          modelPath: scientist.model_path,
-          position: new THREE.Vector3(scientist.position.x, scientist.position.y, scientist.position.z),
-          scale: new THREE.Vector3(0.5, 0.5, 0.5),
-          portraitPath: scientist.portrait_path,
-          bio: scientist.description,
-          birth_year: scientist.birth_year,
-          death_year: scientist.death_year,
-          era: scientist.era,
-          description: scientist.description
-        };
-        
-        scene.addChemist(config);
-      } catch (error) {
-        console.error('添加化學家模型失敗:', error);
-        handleError(error, '添加化學家模型');
-      }
-    }
   } catch (modelError) {
     console.error('模型載入失敗:', modelError);
     handleError(modelError, '模型載入');
@@ -322,6 +325,7 @@ const addChemistModel = async (chemist: Chemist) => {
 // 初始化
 onMounted(async () => {
   try {
+    console.log('組件已掛載，開始初始化場景');
     await loadEraModel(currentEra.value);
   } catch (error) {
     console.error('初始化失敗:', error);
@@ -332,7 +336,9 @@ onMounted(async () => {
 // 清理
 onUnmounted(() => {
   if (scene) {
+    console.log('清理場景');
     scene.dispose();
+    scene = null;
   }
 });
 
@@ -368,63 +374,115 @@ const selectChemist = (chemist: Chemist) => {
 .scene-container {
   flex: 1;
   height: 100%;
+  min-height: 500px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
 .info-panel {
-  width: 300px;
+  width: 320px;
   height: 100%;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #42b883 #f0f0f0;
+}
+
+.info-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.info-panel::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.info-panel::-webkit-scrollbar-thumb {
+  background: #42b883;
+  border-radius: 3px;
 }
 
 .chemist-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .chemist-card {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  gap: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e0e0e0;
+  position: relative;
+  overflow: hidden;
 }
 
 .chemist-card:hover {
-  background: #e9ecef;
-  transform: translateY(-2px);
+  background: #f8f9fa;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #42b883;
+}
+
+.chemist-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #42b883;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chemist-card:hover::before {
+  opacity: 1;
 }
 
 .chemist-portrait {
-  width: 80px;
-  height: 80px;
-  border-radius: 4px;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
   object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.chemist-card:hover .chemist-portrait {
+  transform: scale(1.05);
 }
 
 .chemist-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .chemist-info h3 {
   margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: #2c3e50;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .chemist-info p {
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
   color: #666;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -432,8 +490,17 @@ const selectChemist = (chemist: Chemist) => {
 }
 
 .chemist-years {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #42b883;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chemist-years::before {
+  content: '⌛';
+  font-size: 1rem;
 }
 
 .time-selector-container {
