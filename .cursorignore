@@ -1,0 +1,13 @@
+# 解除忽略的重要檔案（即使 .gitignore 忽略也會保留）
+!.env
+!.env.example
+!.env.local
+!.env.development
+
+!manage.py
+!test_api_key.py
+!test_models.py
+!requirements.txt
+!README.md
+!docker-compose.yml
+!docker-compose.override.yml

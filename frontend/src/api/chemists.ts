@@ -102,7 +102,7 @@ export const getChatHistory = async (chemistId: number): Promise<ChatHistoryResp
 // 清除聊天歷史
 export const clearChatHistory = async (chemistId: number): Promise<void> => {
   try {
-    await axios.delete(`/scientist/${chemistId}/chat_history/`)
+    await axios.delete(`/scientist/${chemistId}/clear_history/`)
   } catch (error) {
     console.error('清除聊天歷史失敗:', error)
     throw error
