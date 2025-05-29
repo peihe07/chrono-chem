@@ -162,7 +162,7 @@ const formatDescription = (desc: string) => {
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   width: 100%;
-    max-width: 400px;
+  max-width: 480px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -200,64 +200,51 @@ const formatDescription = (desc: string) => {
 }
 
 .dialog-body {
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
   display: flex;
-  gap: 24px;
-  flex: 0 0 auto;
-  max-height: none;
-  overflow: visible;
+  flex-direction: row;
+  gap: 16px;
+  max-height: 35vh;
+  align-items: flex-start;
 }
 
 .chemist-portrait {
-  flex: 0 0 200px;
+  width: 80px;
+  height: 80px;
+  margin: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #42b883;
+  background: #f8f9fa;
+  flex-shrink: 0;
 }
 
 .chemist-portrait img {
   width: 100%;
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .chemist-details {
   flex: 1;
   min-width: 0;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
 }
 
 .chemist-years {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color: #42b883;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chemist-years::before {
-  content: "•";
-  color: #42b883;
-  font-size: 1.5rem;
 }
 
 .chemist-description {
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.5;
   color: #2c3e50;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #42b883;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-height: none;
-  overflow: visible;
+  margin: 8px 0;
+  text-align: left;
 }
 
 .chemist-discoveries {
@@ -314,15 +301,18 @@ const formatDescription = (desc: string) => {
   flex-direction: column;
   border-top: 1px solid #eee;
   background: #f8f9fa;
+  min-height: 250px;
+  margin-top: 8px;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  max-height: calc(100vh - 450px);
 }
 
 .message {

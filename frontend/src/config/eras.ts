@@ -12,8 +12,8 @@ export interface EraConfig {
 export const eras: EraConfig[] = [
   {
     id: 1,
-    title: '1774 - 普利斯特里實驗室',
-    description: '普利斯特里在此發現氧氣。',
+    title: '1789 - 拉瓦錫的實驗室',
+    description: '拉瓦錫透過秤重與燃燒實驗推翻了燃素說，確立質量守恆定律。',
     year: 1774,
     modelPath: '/models/priestley_lab.glb',
     modelScale: { x: 11.0, y: 11.0, z: 11 },
