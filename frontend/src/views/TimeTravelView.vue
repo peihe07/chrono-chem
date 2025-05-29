@@ -1,45 +1,28 @@
 <template>
   <div class="time-travel-view">
     <div class="main-content">
-      <div ref="container" class="scene-container"></div>
-      
-      <div class="info-panel">
-        <div class="chemist-list">
-          <div v-for="scientist in scientists" 
-               :key="scientist.id" 
-               class="chemist-card"
-               @click="selectChemist(scientist)">
-            <ChemistPortrait 
-              :portrait-path="scientist.portrait_path"
-              :name="scientist.name"
-            />
-            <div class="chemist-info">
-              <h3>{{ scientist.name }}</h3>
-              <p>{{ scientist.description }}</p>
-              <div class="chemist-years">{{ scientist.birth_year }} - {{ scientist.death_year }}</div>
-            </div>
-          </div>
-        </div>
+      <!-- 場景上方顯示科學家對話框，靠右 -->
+      <div v-if="selectedChemist" class="chemist-dialog-top-right">
+        <button class="toggle-btn" @click="isDialogCollapsed = !isDialogCollapsed">
+          {{ isDialogCollapsed ? '展開對話' : '收合對話' }}
+        </button>
+        <ChemistDialog
+          v-if="!isDialogCollapsed"
+          :show="true"
+          :chemist="selectedChemist"
+          @close="closeChemistDialog"
+        />
       </div>
+      <div ref="container" class="scene-container"></div>
     </div>
-    
     <div class="time-selector-container">
       <TimeSelector v-model:currentEraId="currentEra" />
     </div>
-    
-    <ChemistDialog 
-      v-if="selectedChemist"
-      :show="showChemistDialog" 
-      :chemist="selectedChemist" 
-      @close="closeChemistDialog"
-    />
-
     <!-- 載入狀態 -->
     <div v-if="isLoading" class="loading-overlay">
       <div class="loading-spinner"></div>
       <div class="loading-text">載入中...</div>
     </div>
-
     <!-- 錯誤提示 -->
     <div v-if="error" class="error-toast">
       <div class="error-content">
@@ -96,6 +79,7 @@ const error = ref<string>('');
 // 化學家相關
 const showChemistDialog = ref<boolean>(false);
 const selectedChemist = ref<Chemist | null>(null);
+const isDialogCollapsed = ref(false);
 
 // 全局錯誤處理
 const handleError = (err: unknown, context: string) => {
@@ -246,6 +230,10 @@ const loadEraModel = async (eraId: number) => {
     handleError(modelError, '模型載入');
   } finally {
     isLoading.value = false;
+    // 載入完畢自動顯示第一位化學家對話框
+    if (scientists.value[0]) {
+      selectChemist(scientists.value[0]);
+    }
   }
 };
 
@@ -327,6 +315,14 @@ onMounted(async () => {
   try {
     console.log('組件已掛載，開始初始化場景');
     await loadEraModel(currentEra.value);
+    window.addEventListener('chemist-selected', chemistSelectedHandler as unknown as EventListener);
+    // 自動顯示第一位化學家對話框
+    if (scientists.value.length > 0) {
+      const firstChemist = scientists.value[0];
+      if (firstChemist) {
+        selectChemist(firstChemist);
+      }
+    }
   } catch (error) {
     console.error('初始化失敗:', error);
     handleError(error, '初始化');
@@ -340,6 +336,7 @@ onUnmounted(() => {
     scene.dispose();
     scene = null;
   }
+  window.removeEventListener('chemist-selected', chemistSelectedHandler as unknown as EventListener);
 });
 
 // 化學家對話框相關
@@ -352,7 +349,20 @@ const closeChemistDialog = () => {
 const selectChemist = (chemist: Chemist) => {
   selectedChemist.value = chemist;
   showChemistDialog.value = true;
+  isDialogCollapsed.value = false;
 };
+function chemistSelectedHandler(e: Event) {
+  const customEvent = e as unknown as CustomEvent;
+  const chemistConfig = customEvent.detail;
+  // 用 scientists 列表找出完整 Chemist 物件（含 discoveries 等）
+  const chemist = scientists.value.find(c => c.id === chemistConfig.id);
+  if (chemist) {
+    selectChemist(chemist);
+  } else {
+    // 若找不到，直接用 config 也可
+    selectChemist(chemistConfig);
+  }
+}
 </script>
 
 <style scoped>
@@ -365,153 +375,46 @@ const selectChemist = (chemist: Chemist) => {
 }
 
 .main-content {
+  display: block;
+  height: 100vh;
+  padding: 0;
+  position: relative;
+}
+
+.chemist-dialog-top-right {
+  width: auto;
+  max-width: 420px;
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  z-index: 3000;
   display: flex;
-  height: calc(100vh - 100px); /* 減去時間選擇器的高度 */
-  padding: 20px;
-  gap: 20px;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .scene-container {
-  flex: 1;
-  height: 100%;
-  min-height: 500px;
+  width: 100vw;
+  height: 70vh;
+  min-height: 320px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  box-shadow: none;
   position: relative;
   overflow: hidden;
-}
-
-.info-panel {
-  width: 320px;
-  height: 100%;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  overflow-y: auto;
-  padding: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: #42b883 #f0f0f0;
-}
-
-.info-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.info-panel::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 3px;
-}
-
-.info-panel::-webkit-scrollbar-thumb {
-  background: #42b883;
-  border-radius: 3px;
-}
-
-.chemist-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.chemist-card {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #ffffff;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e0e0e0;
-  position: relative;
-  overflow: hidden;
-}
-
-.chemist-card:hover {
-  background: #f8f9fa;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: #42b883;
-}
-
-.chemist-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: #42b883;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.chemist-card:hover::before {
-  opacity: 1;
-}
-
-.chemist-portrait {
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.chemist-card:hover .chemist-portrait {
-  transform: scale(1.05);
-}
-
-.chemist-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.chemist-info h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.2rem;
-  color: #2c3e50;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.chemist-info p {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.chemist-years {
-  font-size: 0.9rem;
-  color: #42b883;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chemist-years::before {
-  content: '⌛';
-  font-size: 1rem;
+  margin-top: 16px;
 }
 
 .time-selector-container {
   position: fixed;
-  bottom: 2rem;
+  bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
-  width: 100%;
-  max-width: 600px;
-  padding: 0 1rem;
+  width: auto;
+  max-width: 320px;
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
 }
 
 .loading-overlay {
@@ -585,5 +488,21 @@ const selectChemist = (chemist: Chemist) => {
 
 .error-close:hover {
   opacity: 0.8;
+}
+
+.toggle-btn {
+  background: #fff;
+  color: #42b883;
+  border: 1px solid #42b883;
+  border-radius: 6px 6px 0 0;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 2px;
+  z-index: 3100;
+  position: relative;
+}
+.toggle-btn:hover {
+  background: #369870;
 }
 </style>

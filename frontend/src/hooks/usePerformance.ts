@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import * as THREE from 'three'
 
 export function usePerformance() {
@@ -26,7 +26,7 @@ export function usePerformance() {
   const setupLOD = (object: THREE.Object3D, distances: number[]) => {
     const lod = new THREE.LOD()
     
-    distances.forEach((distance, index) => {
+    distances.forEach((distance) => {
       const level = object.clone()
       // TODO: 根據距離設置不同細節層級的模型
       lod.addLevel(level, distance)

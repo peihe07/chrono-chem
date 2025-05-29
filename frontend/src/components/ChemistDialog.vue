@@ -1,53 +1,51 @@
 <template>
-  <div v-if="show" class="dialog-overlay" @click="close">
-    <div class="dialog-content" @click.stop>
-      <div class="dialog-header">
-        <h2>{{ chemist.name }}</h2>
-        <button class="close-button" @click="close">×</button>
+  <div v-if="show" class="dialog-content">
+    <div class="dialog-header">
+      <h2>{{ chemist.name }}</h2>
+      <button class="close-button" @click="close">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="chemist-portrait">
+        <img :src="chemist.portrait_path" :alt="chemist.name">
       </div>
-      <div class="dialog-body">
-        <div class="chemist-portrait">
-          <img :src="chemist.portrait_path" :alt="chemist.name">
+      <div class="chemist-details">
+        <div class="chemist-years">{{ chemist.birth_year }} - {{ chemist.death_year }}</div>
+        <p class="chemist-description" v-html="formatDescription(chemist.description)"></p>
+        <div class="chemist-discoveries" v-if="chemist.discoveries && chemist.discoveries.length > 0">
+          <h3>重要發現</h3>
+          <ul>
+            <li v-for="discovery in chemist.discoveries" :key="discovery.id">
+              {{ discovery.name }} ({{ discovery.year }})
+            </li>
+          </ul>
         </div>
-        <div class="chemist-details">
-          <div class="chemist-years">{{ chemist.birth_year }} - {{ chemist.death_year }}</div>
-          <p class="chemist-description">{{ chemist.description }}</p>
-          <div class="chemist-discoveries" v-if="chemist.discoveries && chemist.discoveries.length > 0">
-            <h3>重要發現</h3>
-            <ul>
-              <li v-for="discovery in chemist.discoveries" :key="discovery.id">
-                {{ discovery.name }} ({{ discovery.year }})
-              </li>
-            </ul>
-          </div>
+      </div>
+    </div>
+    
+    <!-- 對話區域 -->
+    <div class="chat-section">
+      <div class="chat-messages" ref="messagesContainer">
+        <div 
+          v-for="(message, index) in messages" 
+          :key="index" 
+          class="message"
+          :class="{ 'user-message': message.role === 'user' }"
+        >
+          <div class="message-content">{{ message.content }}</div>
+          <div class="message-time">{{ formatTime(message.timestamp) }}</div>
         </div>
       </div>
       
-      <!-- 對話區域 -->
-      <div class="chat-section">
-        <div class="chat-messages" ref="messagesContainer">
-          <div 
-            v-for="(message, index) in messages" 
-            :key="index" 
-            class="message"
-            :class="{ 'user-message': message.role === 'user' }"
-          >
-            <div class="message-content">{{ message.content }}</div>
-            <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-          </div>
-        </div>
-        
-        <div class="chat-input">
-          <input 
-            v-model="userInput" 
-            @keyup.enter="sendMessage"
-            placeholder="輸入您的問題..."
-            :disabled="isLoading"
-          />
-          <button @click="sendMessage" :disabled="isLoading || !userInput.trim()">
-            {{ isLoading ? '發送中...' : '發送' }}
-          </button>
-        </div>
+      <div class="chat-input">
+        <input 
+          v-model="userInput" 
+          @keyup.enter="sendMessage"
+          placeholder="輸入您的問題..."
+          :disabled="isLoading"
+        />
+        <button @click="sendMessage" :disabled="isLoading || !userInput.trim()">
+          {{ isLoading ? '發送中...' : '發送' }}
+        </button>
       </div>
     </div>
   </div>
@@ -149,29 +147,22 @@ const sendMessage = async () => {
 const close = () => {
   emit('close');
 };
+
+// 在 <script setup> 中加入 formatDescription 方法
+const formatDescription = (desc: string) => {
+  if (!desc) return '';
+  // 將換行符號轉成 <br>
+  return desc.replace(/\n/g, '<br>');
+};
 </script>
 
 <style scoped>
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
 .dialog-content {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 800px;
+    max-width: 400px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
