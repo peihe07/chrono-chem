@@ -2,7 +2,12 @@
   <div v-if="show" class="dialog-content">
     <div class="dialog-header">
       <h2>{{ chemist.name }}</h2>
-      <button class="close-button" @click="close">×</button>
+      <div class="header-actions">
+        <button class="clear-button" @click="handleClearHistory" title="清除聊天記錄">
+          <span class="icon">🗑️</span>
+        </button>
+        <button class="close-button" @click="close">×</button>
+      </div>
     </div>
     <div class="dialog-body">
       <div class="chemist-portrait">
@@ -32,7 +37,7 @@
           :class="{ 'user-message': message.role === 'user' }"
         >
           <div class="message-content">{{ message.content }}</div>
-          <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+          <div class="message-time">{{ formatTime(message.timestamp.toString()) }}</div>
         </div>
       </div>
       
@@ -52,10 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { defineProps, defineEmits } from 'vue';
 import type { Chemist } from '@/types/index';
-import { sendMessage as sendChatMessage } from '@/api/chemists';
+import { sendMessage as sendChatMessage, getChatHistory, clearChatHistory } from '@/api/chemists';
 import type { ChatMessage } from '@/api/chemists';
 
 const props = defineProps<{
@@ -73,34 +78,59 @@ const isLoading = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 
 // 格式化時間戳
-const formatTime = (timestamp: number) => {
+const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
-// 初始化歡迎訊息
-onMounted(() => {
-  if (props.show) {
-    addWelcomeMessage();
+// 載入聊天歷史記錄
+const loadChatHistory = async () => {
+  try {
+    const history = await getChatHistory(props.chemist.id);
+    messages.value = history.data;
+    await nextTick();
+    scrollToBottom();
+  } catch (error) {
+    console.error('載入聊天記錄失敗:', error);
   }
-});
+};
 
-// 監聽對話框顯示狀態
-watch(() => props.show, (newValue) => {
-  if (newValue) {
+// 清除聊天記錄
+const handleClearHistory = async () => {
+  try {
+    await clearChatHistory(props.chemist.id);
     messages.value = [];
     addWelcomeMessage();
+  } catch (error) {
+    console.error('清除聊天記錄失敗:', error);
   }
-});
+};
 
-// 添加歡迎訊息
+// 初始化歡迎訊息
 const addWelcomeMessage = () => {
   messages.value.push({
     role: 'assistant',
     content: `您好，我是${props.chemist.name}。有什麼我可以幫助您的嗎？`,
-    timestamp: Date.now()
+    timestamp: Date.now().toString()
   });
 };
+
+// 滾動到底部
+const scrollToBottom = () => {
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+  }
+};
+
+// 監聽對話框顯示狀態
+watch(() => props.show, async (newValue) => {
+  if (newValue) {
+    await loadChatHistory();
+    if (messages.value.length === 0) {
+      addWelcomeMessage();
+    }
+  }
+});
 
 // 發送訊息
 const sendMessage = async () => {
@@ -113,7 +143,7 @@ const sendMessage = async () => {
   const userMessage: ChatMessage = {
     role: 'user',
     content: message,
-    timestamp: Date.now()
+    timestamp: Date.now().toString()
   };
   messages.value.push(userMessage);
   
@@ -123,21 +153,22 @@ const sendMessage = async () => {
   try {
     // 發送訊息到 API
     const response = await sendChatMessage(props.chemist.id, message);
-    
     // 添加化學家回應
-    messages.value.push(response.assistant_message);
+    messages.value.push({
+      role: 'assistant',
+      content: response.data.message,
+      timestamp: Date.now().toString()
+    });
     
     // 滾動到最新訊息
     await nextTick();
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
+    scrollToBottom();
   } catch (err) {
     console.error('發送訊息失敗:', err);
     messages.value.push({
       role: 'assistant',
       content: '抱歉，我現在無法回應您的問題。請稍後再試。',
-      timestamp: Date.now()
+      timestamp: Date.now().toString()
     });
   } finally {
     isLoading.value = false;
@@ -148,10 +179,9 @@ const close = () => {
   emit('close');
 };
 
-// 在 <script setup> 中加入 formatDescription 方法
+// 格式化描述
 const formatDescription = (desc: string) => {
   if (!desc) return '';
-  // 將換行符號轉成 <br>
   return desc.replace(/\n/g, '<br>');
 };
 </script>
@@ -183,6 +213,12 @@ const formatDescription = (desc: string) => {
   margin: 0;
   font-size: 1.2rem;
   color: #2c3e50;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .close-button {
@@ -465,5 +501,23 @@ const formatDescription = (desc: string) => {
   .chat-input {
     padding: 12px;
   }
+}
+
+.clear-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: color 0.3s ease;
+}
+
+.clear-button:hover {
+  color: #e74c3c;
+}
+
+.icon {
+  font-size: 1.2rem;
 }
 </style> 

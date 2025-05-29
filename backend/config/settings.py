@@ -14,6 +14,9 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secret-key-here')
 
+# OpenAI API 設置
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 # SECURITY WARNING: update this in production!
 ALLOWED_HOSTS = ['*']
 

@@ -1,14 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { sendMessage, getChemists, getEvents } from '../chemists'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import axios from 'axios'
-
-vi.mock('axios')
-vi.mock('global', () => ({
-  fetch: vi.fn()
-}))
-
-const mockedAxios = axios as any
-const mockedFetch = global.fetch as any
+import { getChemists, getEvents, sendMessage } from '../chemists'
 
 describe('Chemists API', () => {
   beforeEach(() => {
@@ -16,67 +8,65 @@ describe('Chemists API', () => {
   })
 
   it('應該能獲取化學家列表', async () => {
-    const mockChemists = {
-      count: 1,
-      next: null,
-      previous: null,
-      results: [
-        {
-          id: 1,
-          name: '安東尼·拉瓦錫',
-          era: 1774,
-          description: '法國化學家'
-        }
-      ]
-    }
+    const mockChemists = [
+      {
+        id: 1,
+        name: '約瑟夫·普利斯特里',
+        birth_year: 1733,
+        death_year: 1804,
+        nationality: '英國',
+        major_achievements: '發現氧氣',
+        discoveries: ['氧氣'],
+        image_url: '/images/priestley.jpg',
+        model_url: '/models/priestley_lab.glb',
+        era: 1
+      }
+    ]
 
-    mockedFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockChemists)
-    })
+    const getSpy = vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: mockChemists })
 
     const result = await getChemists()
     expect(result).toEqual(mockChemists)
-    expect(mockedFetch).toHaveBeenCalledWith('/api/chemists/')
+    expect(getSpy).toHaveBeenCalledWith('/chemists/')
   })
 
   it('應該能獲取特定年份的事件', async () => {
-    const mockEvents = {
-      count: 1,
-      next: null,
-      previous: null,
-      results: [
-        {
-          id: 1,
-          title: '發現氧氣',
-          year: 1774,
-          description: '拉瓦錫發現氧氣'
-        }
-      ]
-    }
+    const mockEvents = [
+      {
+        id: 1,
+        year: 1774,
+        title: '發現氧氣',
+        description: '普利斯特里發現氧氣',
+        significance: '開啟了現代化學的新紀元',
+        related_chemists: [1]
+      }
+    ]
 
-    mockedFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockEvents)
-    })
+    const getSpy = vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: mockEvents })
 
     const result = await getEvents(1774)
     expect(result).toEqual(mockEvents)
-    expect(mockedFetch).toHaveBeenCalledWith('/api/events/?year=1774')
+    expect(getSpy).toHaveBeenCalledWith('/events/?year=1774')
   })
 
   it('應該能發送訊息給化學家', async () => {
     const mockResponse = {
-      user_message: { content: '測試訊息', role: 'user' },
-      assistant_message: { content: '這是化學家的回應', role: 'assistant' }
+      status: 'success',
+      data: {
+        message: '你好！我是普利斯特里。'
+      },
+      message: '訊息發送成功'
     }
 
-    mockedAxios.post.mockResolvedValueOnce({ data: mockResponse })
+    const postSpy = vi.spyOn(axios, 'post').mockResolvedValueOnce({ data: mockResponse })
 
-    const result = await sendMessage(1, '測試訊息')
+    const result = await sendMessage(1, '你好')
     expect(result).toEqual(mockResponse)
-    expect(mockedAxios.post).toHaveBeenCalledWith('/api/chemists/1/send_message/', {
-      content: '測試訊息'
-    })
+    expect(postSpy).toHaveBeenCalledWith(
+      '/chemists/1/send_message/',
+      {
+        content: '你好'
+      }
+    )
   })
 }) 

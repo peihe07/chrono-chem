@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters import rest_framework as filters
 from django.shortcuts import get_object_or_404
-from ..models import Chemist
-from ..serializers import ChemistSerializer
+from django.utils import timezone
+from ..models import Chemist, ChatHistory
+from ..serializers import ChemistSerializer, ChatHistorySerializer
+from ..services.ai_service import AIService
 import time
 
 class ChemistFilter(filters.FilterSet):
@@ -19,6 +21,7 @@ class ChemistViewSet(viewsets.ModelViewSet):
     serializer_class = ChemistSerializer
     filterset_class = ChemistFilter
     filter_backends = (filters.DjangoFilterBackend,)
+    ai_service = AIService()
 
     def list(self, request, *args, **kwargs):
         try:
@@ -62,22 +65,76 @@ class ChemistViewSet(viewsets.ModelViewSet):
                     'message': '訊息不能為空'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # TODO: 實現與化學家的對話邏輯
-            response_message = f"我是{chemist.name}，我收到了您的訊息：{message}"
+            # 創建用戶訊息記錄
+            user_message = ChatHistory.objects.create(
+                chemist=chemist,
+                role='user',
+                content=message,
+                timestamp=timezone.now()
+            )
+            
+            # 生成 AI 回應
+            ai_response = self.ai_service.generate_response(chemist, message)
+            
+            # 創建 AI 回應記錄
+            assistant_message = ChatHistory.objects.create(
+                chemist=chemist,
+                role='assistant',
+                content=ai_response,
+                timestamp=timezone.now()
+            )
             
             return Response({
                 'status': 'success',
                 'data': {
                     'assistant_message': {
                         'role': 'assistant',
-                        'content': response_message,
-                        'timestamp': int(time.time() * 1000)
+                        'content': ai_response,
+                        'timestamp': int(timezone.now().timestamp() * 1000)
                     }
                 },
                 'message': '訊息發送成功'
             })
+            
         except Exception as e:
             return Response({
                 'status': 'error',
                 'message': f'發送訊息失敗: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def chat_history(self, request, pk=None):
+        try:
+            chemist = self.get_object()
+            history = ChatHistory.objects.filter(
+                chemist=chemist
+            ).order_by('timestamp')
+            
+            serializer = ChatHistorySerializer(history, many=True)
+            return Response({
+                'status': 'success',
+                'data': serializer.data
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': f'獲取聊天記錄失敗: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['delete'])
+    def clear_history(self, request, pk=None):
+        try:
+            chemist = self.get_object()
+            ChatHistory.objects.filter(chemist=chemist).delete()
+            
+            return Response({
+                'status': 'success',
+                'message': '聊天記錄已清除'
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': f'清除聊天記錄失敗: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
