@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   frontend:
     build:
@@ -5,81 +7,66 @@ services:
       dockerfile: ../docker/frontend/Dockerfile
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/public/models:/app/public/models
+      - ./frontend/public/materials:/app/public/materials
+      - ./frontend/public/scenes:/app/public/scenes
     environment:
-      - NODE_ENV=production
-      - BACKEND_URL=http://backend:8000
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8001
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
-      - app-network
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      - chronochem-network
 
   backend:
     build:
       context: ./backend
       dockerfile: ../docker/backend/Dockerfile
     ports:
-      - "8000:8000"
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py shell -c 'from chemists.models import create_test_data; create_test_data()' &&
-             python manage.py runserver 0.0.0.0:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - POSTGRES_DB=chronochem
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_HOST=db
-      - REDIS_URL=redis://redis:6379/0
-      - DJANGO_DEBUG=True
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "8001:8001"
     volumes:
       - ./backend:/app
+      - ./backend/media:/app/media
+      - ./backend/static:/app/static
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - db
+      - redis
     networks:
-      - app-network
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - chronochem-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/health/"]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
-      start_period: 10s
 
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=chronochem
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
     networks:
-      - app-network
-    restart: unless-stopped
+      - chronochem-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -90,38 +77,59 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - app-network
-    restart: unless-stopped
+      - chronochem-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   celery:
     build:
       context: ./backend
       dockerfile: ../docker/backend/Dockerfile
-    command: celery -A config.celery:app worker -l INFO
+    command: celery -A config worker -l INFO
+    volumes:
+      - ./backend:/app
     environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - POSTGRES_DB=chronochem
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=db
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_PORT=5432
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
+      - backend
       - redis
-      - db
     networks:
-      - app-network
-    restart: unless-stopped
+      - chronochem-network
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./backend/static:/usr/share/nginx/static
+      - ./backend/media:/usr/share/nginx/media
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - chronochem-network
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  app-network:
+  chronochem-network:
     driver: bridge

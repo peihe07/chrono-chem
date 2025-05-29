@@ -12,13 +12,13 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5173,
+    port: 3000,
     fs: {
       strict: false
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:8001',
+        target: process.env.BACKEND_URL || 'http://backend:8001',
         changeOrigin: true
       }
     }

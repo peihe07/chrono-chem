@@ -7,6 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 複製依賴文件
@@ -28,27 +29,44 @@ RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 # 安裝系統依賴
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # 從構建階段複製虛擬環境
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 複製應用代碼
-COPY . .
+# 創建必要的目錄
+RUN mkdir -p /app/staticfiles /app/media && \
+    chown -R appuser:appgroup /app
 
-# 設置用戶權限
-RUN chown -R appuser:appgroup /app
+# 複製應用代碼
+COPY --chown=appuser:appgroup . .
 
 # 切換到非 root 用戶
 USER appuser
+
+# 設置環境變數
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DJANGO_SETTINGS_MODULE=config.settings
 
 # 暴露端口
 EXPOSE 8001
 
 # 健康檢查
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost:8001/api/health/ || exit 1
+    CMD curl -f http://localhost:8001/api/v1/health/ || exit 1
 
 # 啟動命令
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "120", "config.wsgi:application"] 
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:8001", \
+     "--workers", "4", \
+     "--threads", "2", \
+     "--worker-class", "gthread", \
+     "--timeout", "120", \
+     "--keep-alive", "5", \
+     "--log-level", "info", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "config.wsgi:application"] 
