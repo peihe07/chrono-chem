@@ -1,12 +1,12 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import Era, Chemist, HistoricalEvent, ChatHistory
+from .models import Era, Chemist, HistoricalEvent, ChatHistory, UserFeedback
 from .serializers import (
     EraSerializer, ChemistSerializer, HistoricalEventSerializer,
-    ChatHistorySerializer, ChatMessageSerializer
+    ChatHistorySerializer, ChatMessageSerializer, UserFeedbackSerializer
 )
 from rest_framework.decorators import api_view
 
@@ -106,3 +106,11 @@ class SendMessage(generics.CreateAPIView):
 @api_view(['GET'])
 def health_check(request):
     return Response({'status': 'ok'})
+
+class UserFeedbackViewSet(viewsets.ModelViewSet):
+    queryset = UserFeedback.objects.all()
+    serializer_class = UserFeedbackSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user if self.request.user.is_authenticated else None)

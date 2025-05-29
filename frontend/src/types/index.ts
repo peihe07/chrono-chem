@@ -34,4 +34,29 @@ export interface HistoricalEvent {
   image_path: string
   created_at: string
   updated_at: string
+}
+
+export interface Discovery {
+  id: number
+  year: number
+  description: string
+}
+
+export interface Chemist {
+  id: number
+  name: string
+  description: string
+  era: number
+  birth_year: number
+  death_year: number
+  portrait_path: string
+  model_path: string
+  position: {
+    x: number
+    y: number
+    z: number
+  }
+  discoveries: Discovery[]
+  created_at: string
+  updated_at: string
 } 

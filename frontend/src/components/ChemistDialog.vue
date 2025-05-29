@@ -45,6 +45,15 @@
             </div>
           </div>
         </div>
+
+        <!-- 錯誤提示 -->
+        <div v-if="error" class="error-toast">
+          <div class="error-content">
+            <span class="error-icon">⚠️</span>
+            <span class="error-message">{{ error }}</span>
+          </div>
+          <button class="error-close" @click="error = ''">×</button>
+        </div>
       </div>
     </div>
   </Transition>
@@ -67,12 +76,41 @@ const emit = defineEmits<{
 const userInput = ref('');
 const messages = ref<ChatMessage[]>([]);
 const isLoading = ref(false);
+const error = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
 
 // 格式化時間戳
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+// 處理錯誤
+const handleError = (err: unknown, context: string) => {
+  console.error(`${context} 錯誤:`, err);
+  let errorMessage = '發生未知錯誤';
+  
+  if (err instanceof Error) {
+    errorMessage = err.message;
+  } else if (typeof err === 'string') {
+    errorMessage = err;
+  } else if (err && typeof err === 'object' && 'response' in err) {
+    const axiosError = err as { response?: { data?: any } };
+    if (axiosError.response?.data) {
+      if (typeof axiosError.response.data === 'string') {
+        errorMessage = axiosError.response.data;
+      } else if (typeof axiosError.response.data === 'object') {
+        errorMessage = axiosError.response.data.message || axiosError.response.data.detail || '請求失敗';
+      }
+    }
+  }
+  
+  error.value = `${context}: ${errorMessage}`;
+  
+  // 5秒後自動清除錯誤訊息
+  setTimeout(() => {
+    error.value = '';
+  }, 5000);
 };
 
 // 初始化歡迎訊息
@@ -86,6 +124,7 @@ onMounted(() => {
 watch(() => props.show, (newValue) => {
   if (newValue) {
     messages.value = [];
+    error.value = ''; // 清除錯誤訊息
     addWelcomeMessage();
   }
 });
@@ -105,6 +144,7 @@ const sendMessage = async () => {
   
   const message = userInput.value.trim();
   userInput.value = '';
+  error.value = ''; // 清除之前的錯誤
   
   // 添加用戶訊息
   const userMessage: ChatMessage = {
@@ -129,8 +169,8 @@ const sendMessage = async () => {
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-  } catch (error) {
-    console.error('發送訊息失敗:', error);
+  } catch (err) {
+    handleError(err, '發送訊息失敗');
     messages.value.push({
       role: 'assistant',
       content: '抱歉，我現在無法回應您的問題。請稍後再試。',
@@ -328,5 +368,62 @@ const closeDialog = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.error-toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff4d4f;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error-icon {
+  font-size: 1.2rem;
+}
+
+.error-message {
+  font-size: 0.9rem;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
 }
 </style> 

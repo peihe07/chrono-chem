@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Era, Chemist, HistoricalEvent, ChatHistory
+from .models import Era, Chemist, HistoricalEvent, ChatHistory, UserFeedback
 
 class ChatHistorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,3 +82,9 @@ class ChemistSerializer(serializers.ModelSerializer):
 
 class ChatMessageSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000)
+
+class UserFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserFeedback
+        fields = ['id', 'chemist', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'created_at']

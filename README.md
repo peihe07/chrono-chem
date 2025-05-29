@@ -56,7 +56,7 @@ ChronoChem 是一個創新的化學教育平台，讓使用者能夠穿越時空
 1. 克隆專案
 ```bash
 git clone https://github.com/peihe07/chrono-chem.git
-cd chronochem
+cd chrono-chem
 ```
 
 2. 設置環境變數
@@ -213,5 +213,3 @@ chronochem/
 
 ## 聯繫方式
 - 電子郵件：y450376@gmail.com
-- 專案 Issues：https://github.com/peihe07/chrono-chem/issues
-- Discord：即將推出

@@ -16,6 +16,12 @@ export interface Chemist {
   };
 }
 
+interface ApiResponse<T> {
+  status: 'success' | 'error';
+  data: T;
+  message: string;
+}
+
 const api = axios.create({
   baseURL: 'http://localhost:8000/api/',
   timeout: 10000,
@@ -55,7 +61,7 @@ api.interceptors.response.use(
 export const fetchEras = async () => {
   try {
     console.log('開始獲取時代數據...');
-    const response = await api.get('eras/');
+    const response = await api.get<ApiResponse<any>>('eras/');
     console.log('時代數據:', response.data);
     return response.data;
   } catch (error) {
@@ -67,7 +73,7 @@ export const fetchEras = async () => {
 export const fetchEvents = async (eraId: number) => {
   try {
     console.log('開始獲取事件數據，時代ID:', eraId);
-    const response = await api.get(`v2/events/?era=${eraId}`);
+    const response = await api.get<ApiResponse<any>>(`event/?era=${eraId}`);
     console.log('事件數據:', response.data);
     return response.data;
   } catch (error) {
@@ -79,9 +85,9 @@ export const fetchEvents = async (eraId: number) => {
 export const fetchScientists = async (eraId: number): Promise<Chemist[]> => {
   try {
     console.log('開始獲取化學家數據，時代 ID:', eraId);
-    const response = await api.get<{ data: Chemist[] }>(`v2/chemists/?era=${eraId}`);
+    const response = await api.get<ApiResponse<Chemist[]>>(`scientist/?era=${eraId}`);
     console.log('API 響應:', response.data);
-    if (response.data && Array.isArray(response.data.data)) {
+    if (response.data.status === 'success' && Array.isArray(response.data.data)) {
       console.log('獲取到的化學家數據:', response.data.data);
       return response.data.data;
     } else {
@@ -91,6 +97,19 @@ export const fetchScientists = async (eraId: number): Promise<Chemist[]> => {
   } catch (error) {
     console.error('獲取化學家數據時出錯:', error);
     return [];
+  }
+};
+
+export const sendMessage = async (chemistId: number, message: string) => {
+  try {
+    const response = await api.post<ApiResponse<{ assistant_message: any }>>(
+      `scientist/${chemistId}/send_message/`,
+      { message }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('發送訊息失敗:', error);
+    throw error;
   }
 };
 

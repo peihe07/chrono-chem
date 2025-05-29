@@ -32,10 +32,25 @@
     
     <ChemistDialog 
       v-if="selectedChemist"
-      v-model:show="showChemistDialog" 
+      :show="showChemistDialog" 
       :chemist="selectedChemist" 
-      @send-message="handleChemistMessage"
+      @close="closeChemistDialog"
     />
+
+    <!-- 載入狀態 -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">載入中...</div>
+    </div>
+
+    <!-- 錯誤提示 -->
+    <div v-if="error" class="error-toast">
+      <div class="error-content">
+        <span class="error-icon">⚠️</span>
+        <span class="error-message">{{ error }}</span>
+      </div>
+      <button class="error-close" @click="error = ''">×</button>
+    </div>
   </div>
 </template>
 
@@ -47,7 +62,7 @@ import type { CameraPreset } from '@/threejs/scene';
 import { useRouter } from 'vue-router';
 import { eras } from '@/config/eras';
 import { fetchEras, fetchEvents, fetchScientists } from '@/api';
-import type { Chemist } from '@/api';
+import type { Chemist } from '@/types/index';
 import TimeSelector from '@/components/TimeSelector.vue';
 import ChemistDialog from '@/components/ChemistDialog.vue';
 import type { ChemistModelConfig } from '@/threejs/ChemistModel';
@@ -86,20 +101,34 @@ const isControlPanelExpanded = ref<boolean>(false);
 
 // 化學家相關
 const showChemistDialog = ref<boolean>(false);
-const selectedChemist = ref<ChemistModelConfig | null>(null);
+const selectedChemist = ref<Chemist | null>(null);
 
 // 全局錯誤處理
 const handleError = (err: unknown, context: string) => {
   console.error(`${context} 錯誤:`, err);
+  let errorMessage = '發生未知錯誤';
+  
   if (err instanceof Error) {
-    error.value = `${context}: ${err.message}`;
-  } else {
-    error.value = `${context}: 未知錯誤`;
+    errorMessage = err.message;
+  } else if (typeof err === 'string') {
+    errorMessage = err;
+  } else if (err && typeof err === 'object' && 'response' in err) {
+    const axiosError = err as { response?: { data?: any } };
+    if (axiosError.response?.data) {
+      if (typeof axiosError.response.data === 'string') {
+        errorMessage = axiosError.response.data;
+      } else if (typeof axiosError.response.data === 'object') {
+        errorMessage = axiosError.response.data.message || axiosError.response.data.detail || '請求失敗';
+      }
+    }
   }
-  // 3秒後清除錯誤訊息
+  
+  error.value = `${context}: ${errorMessage}`;
+  
+  // 5秒後自動清除錯誤訊息
   setTimeout(() => {
     error.value = '';
-  }, 3000);
+  }, 5000);
 };
 
 onMounted(async () => {
@@ -175,8 +204,17 @@ const handleResize = () => {
   scene?.resize();
 };
 
+const startLoading = () => {
+  isLoading.value = true;
+  error.value = ''; // 清除之前的錯誤
+};
+
+const stopLoading = () => {
+  isLoading.value = false;
+};
+
 async function loadEraModel(eraId: number) {
-  error.value = '';  // 重置錯誤訊息
+  startLoading();
   console.log('開始載入時代模型，ID:', eraId);
   
   const era = eras.find(e => e.id === eraId);
@@ -186,6 +224,7 @@ async function loadEraModel(eraId: number) {
     const errorMsg = '場景未初始化';
     console.error(errorMsg);
     handleError(new Error(errorMsg), '載入場景失敗');
+    stopLoading();
     return;
   }
   
@@ -193,10 +232,10 @@ async function loadEraModel(eraId: number) {
     const errorMsg = `找不到時代ID: ${eraId}`;
     console.error(errorMsg);
     handleError(new Error(errorMsg), '載入場景失敗');
+    stopLoading();
     return;
   }
 
-  isLoading.value = true;
   try {
     console.log('準備載入模型，配置:', {
       modelPath: era.modelPath,
@@ -406,8 +445,11 @@ const addChemistModels = async () => {
 
 // 處理化學家選擇
 const handleChemistSelected = (event: CustomEvent<ChemistModelConfig>) => {
-  selectedChemist.value = event.detail;
-  showChemistDialog.value = true;
+  const chemist = scientists.value.find(s => s.id === event.detail.id);
+  if (chemist) {
+    selectedChemist.value = chemist;
+    showChemistDialog.value = true;
+  }
 };
 
 // 處理化學家訊息
@@ -421,11 +463,14 @@ const handleChemistMessage = async (message: string) => {
     });
     
     console.log('化學家回應:', response.data);
-    // TODO: 在對話框中顯示回應
   } catch (error) {
     console.error('發送訊息失敗:', error);
-    // TODO: 顯示錯誤訊息給用戶
   }
+};
+
+const closeChemistDialog = () => {
+  showChemistDialog.value = false;
+  selectedChemist.value = null;
 };
 </script>
 

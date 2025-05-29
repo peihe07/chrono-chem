@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
 
 class Era(models.Model):
     """化學時代模型"""
@@ -78,6 +79,20 @@ class ChatHistory(models.Model):
 
     def __str__(self):
         return f"{self.chemist.name} - {self.timestamp}"
+
+class UserFeedback(models.Model):
+    chemist = models.ForeignKey('Chemist', on_delete=models.CASCADE, related_name='feedbacks')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.chemist.name} - {self.rating}星評價"
 
 def create_test_data():
     """創建測試數據"""
