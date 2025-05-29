@@ -207,9 +207,26 @@ const loadEraModel = async (eraId: number) => {
         location: "法國巴黎"
       }
     ];
-    
     // 根據當前時代過濾化學家
-    scientists.value = testScientists.filter(s => s.era === eraId);
+    scientists.value = testScientists.filter(s => s.era === eraId).map(s => ({
+      id: s.id,
+      name: s.name,
+      era: s.era,
+      description: s.description,
+      position_x: s.position.x,
+      position_y: s.position.y, 
+      position_z: s.position.z,
+      model_path: s.model_path,
+      birth_year: s.birth_year,
+      death_year: s.death_year,
+      portrait_path: s.portrait_path,
+      discoveries: s.discoveries,
+      events: [],
+      chat_history: [],
+      created_at: s.created_at,
+      updated_at: s.updated_at
+    }));
+
     events.value = testEvents.filter(e => {
       const chemist = testScientists.find(s => s.id === e.chemist);
       return chemist && chemist.era === eraId;
