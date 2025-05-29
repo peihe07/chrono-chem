@@ -16,11 +16,11 @@
       <div class="chemist-details">
         <div class="chemist-years">{{ chemist.birth_year }} - {{ chemist.death_year }}</div>
         <p class="chemist-description" v-html="formatDescription(chemist.description)"></p>
-        <div class="chemist-discoveries" v-if="chemist.discoveries && chemist.discoveries.length > 0">
+        <div class="chemist-discoveries" v-if="chemist.events && chemist.events.length > 0">
           <h3>重要發現</h3>
           <ul>
-            <li v-for="discovery in chemist.discoveries" :key="discovery.id">
-              {{ discovery.name }} ({{ discovery.year }})
+            <li v-for="event in chemist.events" :key="event.id">
+              {{ event.title }} ({{ event.year }})
             </li>
           </ul>
         </div>
@@ -37,7 +37,7 @@
           :class="{ 'user-message': message.role === 'user' }"
         >
           <div class="message-content">{{ message.content }}</div>
-          <div class="message-time">{{ formatTime(message.timestamp.toString()) }}</div>
+          <div class="message-time">{{ formatTime(message.timestamp) }}</div>
         </div>
       </div>
       
@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 import { defineProps, defineEmits } from 'vue';
 import type { Chemist } from '@/types/index';
 import { sendMessage as sendChatMessage, getChatHistory, clearChatHistory } from '@/api/chemists';
@@ -78,16 +78,29 @@ const isLoading = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 
 // 格式化時間戳
-const formatTime = (timestamp: string) => {
-  const date = new Date(timestamp);
+const formatTime = (timestamp: string | number) => {
+  const date = new Date(Number(timestamp));
+  if (isNaN(date.getTime())) {
+    return '';
+  }
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
 // 載入聊天歷史記錄
 const loadChatHistory = async () => {
   try {
-    const history = await getChatHistory(props.chemist.id);
-    messages.value = history.data;
+    if (props.chemist.chat_history && props.chemist.chat_history.length > 0) {
+      messages.value = props.chemist.chat_history.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp.toString()
+      }));
+    } else {
+      const history = await getChatHistory(props.chemist.id);
+      messages.value = history.data.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp.toString()
+      }));
+    }
     await nextTick();
     scrollToBottom();
   } catch (error) {
@@ -108,11 +121,13 @@ const handleClearHistory = async () => {
 
 // 初始化歡迎訊息
 const addWelcomeMessage = () => {
-  messages.value.push({
-    role: 'assistant',
-    content: `您好，我是${props.chemist.name}。有什麼我可以幫助您的嗎？`,
-    timestamp: Date.now().toString()
-  });
+  if (messages.value.length === 0) {
+    messages.value.push({
+      role: 'assistant',
+      content: `您好，我是${props.chemist.name}。有什麼我可以幫助您的嗎？`,
+      timestamp: Date.now().toString()
+    });
+  }
 };
 
 // 滾動到底部
@@ -122,13 +137,28 @@ const scrollToBottom = () => {
   }
 };
 
+// 監聽化學家 ID 變動，切換時重載聊天紀錄
+watch(() => props.chemist.id, async (newId, oldId) => {
+  messages.value = [];
+  if (props.show) {
+    await loadChatHistory();
+    addWelcomeMessage();
+  }
+});
+
 // 監聽對話框顯示狀態
 watch(() => props.show, async (newValue) => {
   if (newValue) {
     await loadChatHistory();
-    if (messages.value.length === 0) {
-      addWelcomeMessage();
-    }
+    addWelcomeMessage();
+  }
+});
+
+// 組件掛載時初始化
+onMounted(async () => {
+  if (props.show) {
+    await loadChatHistory();
+    addWelcomeMessage();
   }
 });
 
@@ -153,12 +183,18 @@ const sendMessage = async () => {
   try {
     // 發送訊息到 API
     const response = await sendChatMessage(props.chemist.id, message);
+    console.log('API 響應:', response);
+    
     // 添加化學家回應
-    messages.value.push({
-      role: 'assistant',
-      content: response.data.message,
-      timestamp: Date.now().toString()
-    });
+    if (response.data && response.data.assistant_message) {
+      messages.value.push({
+        role: 'assistant',
+        content: response.data.assistant_message.content,
+        timestamp: response.data.assistant_message.timestamp.toString()
+      });
+    } else {
+      throw new Error('API 響應格式不正確');
+    }
     
     // 滾動到最新訊息
     await nextTick();

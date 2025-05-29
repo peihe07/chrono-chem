@@ -1,4 +1,5 @@
 import { Vector3 } from 'three'
+import type { ChatMessage } from '@/api/chemists'
 
 export interface ChemistModelConfig {
   name: string
@@ -10,12 +11,6 @@ export interface ChemistModelConfig {
   portrait_path: string
   model_path: string
   bio?: string
-}
-
-export interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: number
 }
 
 export interface Achievement {
@@ -46,18 +41,17 @@ export interface Discovery {
 export interface Chemist {
   id: number
   name: string
-  description: string
   era: number
+  description: string
+  position_x: number
+  position_y: number
+  position_z: number
   birth_year: number
   death_year: number
   portrait_path: string
   model_path: string
-  position: {
-    x: number
-    y: number
-    z: number
-  }
-  discoveries: Discovery[]
+  events: HistoricalEvent[]
+  chat_history: ChatMessage[]
   created_at: string
   updated_at: string
-} 
+}

@@ -38,7 +38,11 @@ export interface ChatMessage {
 export interface ChatResponse {
   status: string
   data: {
-    message: string
+    assistant_message: {
+      role: 'assistant'
+      content: string
+      timestamp: number
+    }
   }
   message: string
 }
@@ -74,8 +78,8 @@ export const getEvents = async (year: number): Promise<HistoricalEvent[]> => {
 // 發送訊息給化學家
 export const sendMessage = async (chemistId: number, message: string): Promise<ChatResponse> => {
   try {
-    const response = await axios.post(`/chemists/${chemistId}/send_message/`, {
-      content: message
+    const response = await axios.post(`/scientist/${chemistId}/send_message/`, {
+      message
     })
     return response.data
   } catch (error) {
@@ -87,7 +91,7 @@ export const sendMessage = async (chemistId: number, message: string): Promise<C
 // 獲取聊天歷史
 export const getChatHistory = async (chemistId: number): Promise<ChatHistoryResponse> => {
   try {
-    const response = await axios.get(`/chemists/${chemistId}/chat_history/`)
+    const response = await axios.get(`/scientist/${chemistId}/chat_history/`)
     return response.data
   } catch (error) {
     console.error('獲取聊天歷史失敗:', error)
@@ -98,7 +102,7 @@ export const getChatHistory = async (chemistId: number): Promise<ChatHistoryResp
 // 清除聊天歷史
 export const clearChatHistory = async (chemistId: number): Promise<void> => {
   try {
-    await axios.delete(`/chemists/${chemistId}/chat_history/`)
+    await axios.delete(`/scientist/${chemistId}/chat_history/`)
   } catch (error) {
     console.error('清除聊天歷史失敗:', error)
     throw error

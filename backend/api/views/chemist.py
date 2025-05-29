@@ -56,6 +56,7 @@ class ChemistViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
         try:
+            print(f"開始處理發送訊息請求，化學家 ID: {pk}")
             chemist = self.get_object()
             message = request.data.get('message')
             
@@ -65,6 +66,7 @@ class ChemistViewSet(viewsets.ModelViewSet):
                     'message': '訊息不能為空'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
+            print(f"創建用戶訊息記錄: {message}")
             # 創建用戶訊息記錄
             user_message = ChatHistory.objects.create(
                 chemist=chemist,
@@ -73,9 +75,11 @@ class ChemistViewSet(viewsets.ModelViewSet):
                 timestamp=timezone.now()
             )
             
+            print("生成 AI 回應...")
             # 生成 AI 回應
             ai_response = self.ai_service.generate_response(chemist, message)
             
+            print(f"創建 AI 回應記錄: {ai_response}")
             # 創建 AI 回應記錄
             assistant_message = ChatHistory.objects.create(
                 chemist=chemist,
@@ -97,6 +101,9 @@ class ChemistViewSet(viewsets.ModelViewSet):
             })
             
         except Exception as e:
+            print(f"發送訊息時發生錯誤: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return Response({
                 'status': 'error',
                 'message': f'發送訊息失敗: {str(e)}'
@@ -105,6 +112,7 @@ class ChemistViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def chat_history(self, request, pk=None):
         try:
+            print(f"開始獲取聊天記錄，化學家 ID: {pk}")
             chemist = self.get_object()
             history = ChatHistory.objects.filter(
                 chemist=chemist
@@ -117,6 +125,9 @@ class ChemistViewSet(viewsets.ModelViewSet):
             })
             
         except Exception as e:
+            print(f"獲取聊天記錄時發生錯誤: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return Response({
                 'status': 'error',
                 'message': f'獲取聊天記錄失敗: {str(e)}'
