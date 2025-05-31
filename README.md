@@ -22,7 +22,7 @@ ChronoChem 是一個創新的教育平台，讓使用者能夠穿越時空，與
 
 ```bash
 # 克隆專案
-git clone https://github.com/yourusername/chrono-chem.git
+git clone https://github.com/peihe07/chrono-chem.git
 cd chrono-chem
 
 # 使用 Docker Compose 啟動
