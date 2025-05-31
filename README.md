@@ -1,5 +1,7 @@
 # ChronoChem - 化學時空之旅 🌟
 
+![ChronoChem](https://github.com/user-attachments/assets/d7c3a29f-fd11-4b26-9dbb-ad596fb31d54)
+
 ChronoChem 是一個創新的教育平台，讓使用者能夠穿越時空，與歷史上著名的化學家進行互動對話，探索化學發展的精彩歷程。
 
 ## ✨ 主要功能
