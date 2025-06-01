@@ -1,0 +1,2 @@
+# 每天凌晨 2 點執行備份
+0 2 * * * /usr/local/bin/backup.sh >> /var/log/postgresql/backup.log 2>&1 
