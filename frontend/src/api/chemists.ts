@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // 設置 axios 的基礎 URL
-axios.defaults.baseURL = 'http://localhost:8002/api/v1'
+axios.defaults.baseURL = 'https://chronochem.uno/api/v1'
 
 // 化學家介面
 export interface Chemist {
