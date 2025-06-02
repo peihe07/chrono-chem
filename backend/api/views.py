@@ -9,6 +9,7 @@ from .serializers import (
     ChatHistorySerializer, ChatMessageSerializer, UserFeedbackSerializer
 )
 from rest_framework.decorators import api_view
+from .services.ai_service import AIService
 
 class HealthCheck(APIView):
     """
@@ -69,39 +70,59 @@ class ChatHistoryList(generics.ListAPIView):
         return ChatHistory.objects.filter(chemist_id=chemist_id).order_by('timestamp')
 
 class SendMessage(generics.CreateAPIView):
-    serializer_class = ChatHistorySerializer
+    serializer_class = ChatMessageSerializer
     
     def create(self, request, *args, **kwargs):
         chemist_id = self.kwargs['chemist_id']
-        content = request.data.get('content', '')
+        message = request.data.get('message', '')
         
-        if not content:
+        if not message:
             return Response(
                 {'error': '消息內容不能為空'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # 創建用戶消息
-        user_message = ChatHistory.objects.create(
-            chemist_id=chemist_id,
-            role='user',
-            content=content,
-            timestamp=timezone.now()
-        )
-        
-        # TODO: 這裡可以添加與 AI 模型的整合
-        # 暫時返回一個簡單的回應
-        assistant_message = ChatHistory.objects.create(
-            chemist_id=chemist_id,
-            role='assistant',
-            content=f'收到您的消息：{content}',
-            timestamp=timezone.now()
-        )
-        
-        return Response({
-            'user_message': ChatHistorySerializer(user_message).data,
-            'assistant_message': ChatHistorySerializer(assistant_message).data
-        })
+        try:
+            chemist = get_object_or_404(Chemist, id=chemist_id)
+            
+            # 創建用戶消息
+            user_message = ChatHistory.objects.create(
+                chemist=chemist,
+                role='user',
+                content=message,
+                timestamp=timezone.now()
+            )
+            
+            # 使用 AI 服務生成回應
+            ai_service = AIService()
+            ai_response = ai_service.generate_response(chemist, message)
+            
+            # 創建 AI 回應
+            assistant_message = ChatHistory.objects.create(
+                chemist=chemist,
+                role='assistant',
+                content=ai_response,
+                timestamp=timezone.now()
+            )
+            
+            return Response({
+                'status': 'success',
+                'data': {
+                    'assistant_message': {
+                        'role': 'assistant',
+                        'content': ai_response,
+                        'timestamp': int(timezone.now().timestamp() * 1000)
+                    }
+                },
+                'message': '訊息發送成功'
+            })
+            
+        except Exception as e:
+            print(f"發送訊息失敗: {str(e)}")
+            return Response({
+                'status': 'error',
+                'message': f'發送訊息失敗: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def health_check(request):

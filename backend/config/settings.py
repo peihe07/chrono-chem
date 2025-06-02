@@ -8,14 +8,21 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# AI 模型設置
+MODEL_NAME = os.getenv('MODEL_NAME', 'gpt-4')
+MAX_TOKENS = int(os.getenv('MAX_TOKENS', 1000))
+TEMPERATURE = float(os.getenv('TEMPERATURE', 0.7))
+
+# OpenAI API 設置
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secret-key-here')
-
-# OpenAI API 設置
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # SECURITY WARNING: update this in production!
 ALLOWED_HOSTS = ['*']

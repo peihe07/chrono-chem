@@ -32,6 +32,12 @@ class Chemist(models.Model):
     birth_year = models.IntegerField(verbose_name="出生年份", default=1800)
     death_year = models.IntegerField(verbose_name="死亡年份", null=True, blank=True)
     portrait_path = models.CharField(max_length=200, verbose_name="肖像路徑", null=True, blank=True, default='')
+    nationality = models.CharField(max_length=100, verbose_name="國籍", default='')
+    achievements = models.TextField(verbose_name="主要成就", default='')
+    discoveries = models.TextField(verbose_name="重要發現", default='')
+    personality = models.TextField(verbose_name="個性特點", default='')
+    era_background = models.TextField(verbose_name="時代背景", default='')
+    system_prompt = models.TextField(verbose_name="系統提示詞", default='')
     created_at = models.DateTimeField(default=timezone.now, verbose_name="創建時間")
     updated_at = models.DateTimeField(default=timezone.now, verbose_name="更新時間")
 

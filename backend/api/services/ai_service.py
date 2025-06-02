@@ -2,12 +2,18 @@ from typing import Dict, Any
 from openai import OpenAI
 from django.conf import settings
 from ..models import Chemist, ChatHistory
+import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
-        print(f"初始化 AIService，API Key: {settings.OPENAI_API_KEY[:8]}...")
+        logger.info("初始化 AIService")
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-3.5-turbo"
+        self.model = settings.MODEL_NAME
+        self.max_tokens = settings.MAX_TOKENS
+        self.temperature = settings.TEMPERATURE
         
     def _get_chemist_prompt(self, chemist: Chemist) -> str:
         """生成化學家的系統提示詞"""
@@ -17,23 +23,16 @@ class AIService:
 1. 基本資訊：
 - 出生年份：{chemist.birth_year}
 - 逝世年份：{chemist.death_year}
-- 主要成就：{chemist.description}
+- 主要成就：{chemist.achievements}
 
 2. 重要發現：
-{self._format_discoveries(chemist)}
+{chemist.discoveries}
 
 3. 個性特點：
-- 你是一位充滿好奇心和探索精神的科學家
-- 你對化學研究充滿熱情
-- 你樂於分享你的研究經驗和發現過程
-- 你對新知識保持開放態度
-- 你重視實驗和觀察的重要性
+{chemist.personality}
 
 4. 時代背景：
-- 你生活在{chemist.birth_year}到{chemist.death_year}年間
-- 你的研究反映了當時的科學發展水平
-- 你使用當時的實驗設備和方法
-- 你了解當時的化學理論和概念
+{chemist.era_background}
 
 5. 回答要求：
 - 使用繁體中文回答
@@ -78,27 +77,33 @@ class AIService:
     def generate_response(self, chemist: Chemist, user_message: str) -> str:
         """生成 AI 回應"""
         try:
-            print(f"開始生成回應，化學家: {chemist.name}")
+            logger.info(f"開始生成回應，化學家: {chemist.name}")
             messages = [
                 {"role": "system", "content": self._get_chemist_prompt(chemist)},
                 *self._get_chat_history(chemist),
                 {"role": "user", "content": user_message}
             ]
             
-            print("發送請求到 OpenAI API...")
+            logger.info("發送請求到 OpenAI API...")
+            logger.debug(f"請求內容: {messages}")
+            
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                temperature=0.7,
-                max_tokens=200
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                top_p=1.0,
+                frequency_penalty=0.0,
+                presence_penalty=0.0
             )
             
-            print("成功獲取 OpenAI 回應")
+            logger.info("成功獲取 OpenAI 回應")
+            logger.debug(f"回應內容: {response.choices[0].message.content}")
+            
             return response.choices[0].message.content
             
         except Exception as e:
-            import traceback
-            print(f"AI 回應生成失敗: {str(e)}")
-            print("messages:", messages)
-            print(traceback.format_exc())
+            logger.error(f"AI 回應生成失敗: {str(e)}")
+            logger.error(f"錯誤詳情: {traceback.format_exc()}")
+            logger.error(f"請求內容: {messages}")
             return f"抱歉，我現在無法回應您的問題。請稍後再試。" 
