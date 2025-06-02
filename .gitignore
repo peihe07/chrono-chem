@@ -59,6 +59,8 @@ env/
 venv/
 ENV/
 .env
+.env.local
+.env.*.local
 .env.example
 
 # IDE 配置
@@ -81,55 +83,6 @@ Thumbs.db
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Django
-*.log
-local_settings.py
-media
-
-# Environment variables
-!.env
-.env.local
-.env.*.local
-!.env.example
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Node
 node_modules/
