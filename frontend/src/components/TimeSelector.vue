@@ -109,103 +109,119 @@ const navigateToEra = (eraId: number) => {
 
 <style scoped>
 .time-selector {
-  background: rgba(255, 255, 255, 0.98);
+  position: relative;
+  background: rgba(240, 244, 240, 0.95);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  padding: 1.2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 2rem;
+  z-index: 1000;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  max-width: 600px;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 1rem;
+  border-top: 2px solid #2c5e2c;
 }
 
 .time-display {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  margin-bottom: 1.5rem;
+  gap: 0.8rem;
+  min-width: 160px;
+  flex-shrink: 0;
 }
 
 .year {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  color: #42b883;
-  margin-bottom: 0.5rem;
+  color: #2c5e2c;
 }
 
 .era-title {
-  font-size: 1.2rem;
-  color: #2c3e50;
-  text-align: center;
+  font-size: 1rem;
+  color: #2c5e2c;
+  white-space: nowrap;
 }
 
 .time-slider-container {
+  flex: 1;
+  margin: 0 1rem;
   position: relative;
-  margin-bottom: 1.5rem;
-  padding: 0 1rem;
+  min-width: 0;
 }
 
 .time-markers {
   position: relative;
-  height: 40px;
-  margin-bottom: 10px;
+  height: 32px;
+  margin-bottom: 6px;
 }
 
 .time-marker {
   position: absolute;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  transform: translateX(-50%);
+  gap: 4px;
 }
 
 .marker-dot {
-  width: 12px;
-  height: 12px;
+  width: 6px;
+  height: 6px;
   background: #ccc;
   border-radius: 50%;
-  margin-bottom: 5px;
   transition: all 0.3s ease;
 }
 
 .time-marker.active .marker-dot {
-  background: #42b883;
+  background: #2c5e2c;
   transform: scale(1.2);
 }
 
 .marker-year {
-  font-size: 0.8rem;
+  font-size: 1.1rem;
   color: #666;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  padding: 2px 6px;
+  background: rgba(240, 244, 240, 0.9);
+  border-radius: 4px;
 }
 
 .time-marker.active .marker-year {
-  color: #42b883;
+  color: #2c5e2c;
   font-weight: 600;
+  background: rgba(44, 94, 44, 0.1);
+  font-size: 1.2rem;
 }
 
 .time-slider {
   width: 100%;
+  margin-top: 2px;
 }
 
 input[type="range"] {
   width: 100%;
-  height: 6px;
+  height: 3px;
   background: #e0e0e0;
-  border-radius: 3px;
+  border-radius: 2px;
   outline: none;
   -webkit-appearance: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #42b883;
+  width: 12px;
+  height: 12px;
+  background: #2c5e2c;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(44, 94, 44, 0.2);
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -214,46 +230,69 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .time-navigation {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.4rem;
+  min-width: 160px;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .nav-button {
-  flex: 1;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.2rem;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-}
-
-.nav-button:hover:not(:disabled) {
-  background: #3aa876;
-  transform: translateY(-2px);
-}
-
-.nav-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  opacity: 0.7;
+  gap: 0.2rem;
+  white-space: nowrap;
 }
 
 .nav-icon {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
-.prev {
-  justify-content: flex-start;
-}
+@media (max-width: 768px) {
+  .time-selector {
+    padding: 0.4rem 1rem;
+    height: 50px;
+    gap: 0.5rem;
+  }
 
-.next {
-  justify-content: flex-end;
+  .time-display {
+    min-width: 120px;
+    gap: 0.5rem;
+  }
+
+  .year {
+    font-size: 1.4rem;
+  }
+
+  .era-title {
+    font-size: 0.9rem;
+  }
+
+  .time-navigation {
+    min-width: 120px;
+  }
+
+  .nav-button {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .nav-icon {
+    font-size: 0.8rem;
+  }
+
+  .marker-year {
+    font-size: 0.9rem;
+  }
+
+  .time-marker.active .marker-year {
+    font-size: 1rem;
+  }
+
+  .time-markers {
+    height: 28px;
+    margin-bottom: 4px;
+  }
 }
 </style> 

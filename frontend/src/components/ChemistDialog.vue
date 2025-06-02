@@ -224,9 +224,10 @@ const formatDescription = (desc: string) => {
 
 <style scoped>
 .dialog-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  background: #f0f4f0;
+  border: 2px solid #2c5e2c;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(44, 94, 44, 0.2);
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
@@ -234,21 +235,46 @@ const formatDescription = (desc: string) => {
   flex-direction: column;
   overflow: hidden;
   animation: dialogFadeIn 0.3s ease;
+  font-family: 'Courier New', monospace;
+  color: #2c5e2c;
+  position: fixed;
+  top: 17vh;
+  right: 1vw;
+  z-index: 1000;
+}
+
+.dialog-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(44, 94, 44, 0.03) 0px,
+    rgba(44, 94, 44, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: scanline 8s linear infinite;
 }
 
 .dialog-header {
   padding: 12px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #2c5e2c;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8f9fa;
+  background: rgba(44, 94, 44, 0.1);
 }
 
 .dialog-header h2 {
   margin: 0;
   font-size: 1.2rem;
-  color: #2c3e50;
+  color: #2c5e2c;
+  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .header-actions {
@@ -259,16 +285,17 @@ const formatDescription = (desc: string) => {
 
 .close-button {
   background: none;
-  border: none;
+  border: 1px solid #2c5e2c;
   font-size: 1.2rem;
-  color: #666;
+  color: #2c5e2c;
   cursor: pointer;
   padding: 0 8px;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .close-button:hover {
-  color: #42b883;
+  background: rgba(44, 94, 44, 0.2);
+  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .dialog-body {
@@ -279,17 +306,19 @@ const formatDescription = (desc: string) => {
   gap: 16px;
   max-height: 35vh;
   align-items: flex-start;
+  background: rgba(240, 244, 240, 0.8);
 }
 
 .chemist-portrait {
   width: 80px;
   height: 80px;
   margin: 0;
-  border-radius: 50%;
+  border-radius: 4px;
   overflow: hidden;
-  border: 3px solid #42b883;
-  background: #f8f9fa;
+  border: 2px solid #2c5e2c;
+  background: #fff;
   flex-shrink: 0;
+  filter: sepia(30%) saturate(150%);
 }
 
 .chemist-portrait img {
@@ -297,6 +326,7 @@ const formatDescription = (desc: string) => {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0.9;
 }
 
 .chemist-details {
@@ -306,15 +336,16 @@ const formatDescription = (desc: string) => {
 
 .chemist-years {
   font-size: 0.9rem;
-  color: #42b883;
+  color: #2c5e2c;
   margin-bottom: 8px;
   font-weight: 500;
+  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .chemist-description {
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #2c3e50;
+  color: #2c5e2c;
   margin: 8px 0;
   text-align: left;
 }
@@ -322,22 +353,24 @@ const formatDescription = (desc: string) => {
 .chemist-discoveries {
   margin-top: 24px;
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: rgba(44, 94, 44, 0.1);
+  border: 1px solid #2c5e2c;
+  border-radius: 4px;
 }
 
 .chemist-discoveries h3 {
   font-size: 1.2rem;
-  color: #2c3e50;
+  color: #2c5e2c;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
+  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .chemist-discoveries h3::before {
-  content: "•";
-  color: #42b883;
+  content: ">";
+  color: #2c5e2c;
   font-size: 1.5rem;
 }
 
@@ -349,16 +382,16 @@ const formatDescription = (desc: string) => {
 
 .chemist-discoveries li {
   padding: 8px 0;
-  border-bottom: 1px solid #eee;
-  color: #666;
+  border-bottom: 1px solid rgba(44, 94, 44, 0.2);
+  color: #2c5e2c;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .chemist-discoveries li::before {
-  content: "•";
-  color: #42b883;
+  content: ">";
+  color: #2c5e2c;
   font-size: 1.2rem;
 }
 
@@ -371,8 +404,8 @@ const formatDescription = (desc: string) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid #eee;
-  background: #f8f9fa;
+  border-top: 1px solid #2c5e2c;
+  background: rgba(240, 244, 240, 0.8);
   min-height: 250px;
   margin-top: 8px;
 }
@@ -390,6 +423,7 @@ const formatDescription = (desc: string) => {
 .message {
   max-width: 80%;
   align-self: flex-start;
+  position: relative;
 }
 
 .message.user-message {
@@ -398,30 +432,42 @@ const formatDescription = (desc: string) => {
 
 .message-content {
   padding: 12px 16px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  background: rgba(44, 94, 44, 0.1);
+  border: 1px solid #2c5e2c;
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #2c3e50;
+  color: #2c5e2c;
+  position: relative;
+}
+
+.message-content::before {
+  content: ">";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2c5e2c;
+  opacity: 0.5;
 }
 
 .user-message .message-content {
-  background: #42b883;
-  color: white;
+  background: rgba(44, 94, 44, 0.2);
+  border: 1px solid #2c5e2c;
+  color: #2c5e2c;
 }
 
 .message-time {
   font-size: 0.8rem;
-  color: #999;
+  color: rgba(44, 94, 44, 0.7);
   margin-top: 4px;
   text-align: right;
 }
 
 .chat-input {
   padding: 16px;
-  background: white;
-  border-top: 1px solid #eee;
+  background: rgba(240, 244, 240, 0.9);
+  border-top: 1px solid #2c5e2c;
   display: flex;
   gap: 12px;
 }
@@ -429,45 +475,65 @@ const formatDescription = (desc: string) => {
 .chat-input input {
   flex: 1;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid #2c5e2c;
+  border-radius: 4px;
   font-size: 0.95rem;
-  transition: border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+  color: #2c5e2c;
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s ease;
 }
 
 .chat-input input:focus {
   outline: none;
-  border-color: #42b883;
+  box-shadow: 0 0 10px rgba(44, 94, 44, 0.3);
+}
+
+.chat-input input::placeholder {
+  color: rgba(44, 94, 44, 0.5);
 }
 
 .chat-input button {
   padding: 12px 24px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  background: rgba(44, 94, 44, 0.1);
+  color: #2c5e2c;
+  border: 1px solid #2c5e2c;
+  border-radius: 4px;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
 }
 
 .chat-input button:hover:not(:disabled) {
-  background: #3aa876;
+  background: rgba(44, 94, 44, 0.2);
+  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .chat-input button:disabled {
-  background: #ccc;
+  background: rgba(44, 94, 44, 0.05);
+  border-color: rgba(44, 94, 44, 0.3);
+  color: rgba(44, 94, 44, 0.3);
   cursor: not-allowed;
 }
 
 @keyframes dialogFadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(20px);
   }
   to {
     opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scanline {
+  0% {
     transform: translateY(0);
+  }
+  100% {
+    transform: translateY(100%);
   }
 }
 
@@ -541,16 +607,19 @@ const formatDescription = (desc: string) => {
 
 .clear-button {
   background: none;
-  border: none;
+  border: 1px solid #2c5e2c;
   font-size: 1.2rem;
-  color: #666;
+  color: #2c5e2c;
   cursor: pointer;
   padding: 0 8px;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .clear-button:hover {
-  color: #e74c3c;
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #c62828;
+  color: #c62828;
+  text-shadow: 0 0 5px rgba(198, 40, 40, 0.3);
 }
 
 .icon {

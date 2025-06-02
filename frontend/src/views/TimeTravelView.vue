@@ -315,10 +315,10 @@ function chemistSelectedHandler(e: Event) {
 }
 
 .main-content {
-  display: block;
-  height: 100vh;
-  padding: 0;
   position: relative;
+  padding: 0;
+  margin: 0;
+  height: calc(100vh - 60px); /* 減去時間選擇器的高度 */
 }
 
 .chemist-dialog-top-right {
@@ -334,27 +334,23 @@ function chemistSelectedHandler(e: Event) {
 }
 
 .scene-container {
-  width: 100vw;
-  height: 70vh;
-  min-height: 320px;
+  width: 100%;
+  height: 100%;
   background: white;
   border-radius: 0;
   box-shadow: none;
   position: relative;
   overflow: hidden;
-  margin-top: 16px;
+  margin: 0;
+  padding: 0;
 }
 
 .time-selector-container {
-  position: fixed;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  width: auto;
-  max-width: 320px;
-  padding: 0 0.5rem;
-  font-size: 0.85rem;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  height: 60px;
 }
 
 .loading-overlay {
