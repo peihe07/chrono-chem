@@ -84,28 +84,28 @@ class SendMessage(generics.CreateAPIView):
         
         try:
             chemist = get_object_or_404(Chemist, id=chemist_id)
-            
-            # 創建用戶消息
-            user_message = ChatHistory.objects.create(
+        
+        # 創建用戶消息
+        user_message = ChatHistory.objects.create(
                 chemist=chemist,
-                role='user',
+            role='user',
                 content=message,
-                timestamp=timezone.now()
-            )
-            
+            timestamp=timezone.now()
+        )
+        
             # 使用 AI 服務生成回應
             ai_service = AIService()
             ai_response = ai_service.generate_response(chemist, message)
             
             # 創建 AI 回應
-            assistant_message = ChatHistory.objects.create(
+        assistant_message = ChatHistory.objects.create(
                 chemist=chemist,
-                role='assistant',
+            role='assistant',
                 content=ai_response,
-                timestamp=timezone.now()
-            )
-            
-            return Response({
+            timestamp=timezone.now()
+        )
+        
+        return Response({
                 'status': 'success',
                 'data': {
                     'assistant_message': {

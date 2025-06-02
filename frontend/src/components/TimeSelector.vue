@@ -271,14 +271,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   .time-navigation {
     min-width: 120px;
-  }
+}
 
   .nav-button {
     padding: 0.15rem 0.4rem;
     font-size: 0.8rem;
-  }
+}
 
-  .nav-icon {
+.nav-icon {
     font-size: 0.8rem;
   }
 
@@ -287,12 +287,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   .time-marker.active .marker-year {
-    font-size: 1rem;
-  }
+  font-size: 1rem;
+}
 
   .time-markers {
     height: 28px;
     margin-bottom: 4px;
-  }
+}
 }
 </style> 

@@ -80,7 +80,7 @@ services:
     networks:
       - chronochem-network
     ports:
-      - "8081:80"
+      - "8082:80"  
       - "8443:443"
     restart: unless-stopped
 
