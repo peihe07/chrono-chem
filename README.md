@@ -18,6 +18,7 @@ ChronoChem 是一個創新的教育平台，讓使用者能夠穿越時空，與
 - Node.js 18+
 - Python 3.8+
 - PostgreSQL 13+
+- Redis 7+
 - Docker & Docker Compose (可選)
 
 ### 使用 Docker 運行（推薦）
@@ -26,6 +27,10 @@ ChronoChem 是一個創新的教育平台，讓使用者能夠穿越時空，與
 # 克隆專案
 git clone https://github.com/peihe07/chrono-chem.git
 cd chrono-chem
+
+# 複製環境變數範例文件
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
 # 使用 Docker Compose 啟動
 docker-compose up -d
@@ -58,12 +63,16 @@ npm run dev
 - TypeScript
 - Vite
 - Pinia
+- Axios
 
 ### 後端
 - Django
 - Django REST Framework
 - PostgreSQL
+- Redis
+- Celery
 - OpenAI API
+- Nginx
 
 ## 🔧 開發指南
 
@@ -71,20 +80,50 @@ npm run dev
 ```
 chrono-chem/
 ├── frontend/          # Vue 3 前端
-├── backend/           # Django 後端
-├── docs/             # 文檔
-└── docker/           # Docker 配置
+│   ├── src/          # 源代碼
+│   ├── public/       # 靜態資源
+│   └── dist/         # 構建輸出
+├── backend/          # Django 後端
+│   ├── api/         # API 應用
+│   ├── core/        # 核心配置
+│   └── media/       # 媒體文件
+├── docker/          # Docker 配置
+│   ├── backend/    # 後端 Dockerfile
+│   ├── db/         # 數據庫配置
+│   └── nginx/      # Nginx 配置
+└── docs/           # 文檔
 ```
 
 ### 環境變數
-複製 `.env.example` 到 `.env` 並設置必要的環境變數：
+專案需要以下環境變數：
+
+#### 後端 (.env)
 ```bash
-cp .env.example .env
+DEBUG=True
+SECRET_KEY=your-secret-key
+DATABASE_URL=postgres://user:password@localhost:5432/chrono_chem
+REDIS_URL=redis://localhost:6379/0
+OPENAI_API_KEY=your-openai-api-key
+MODEL_NAME=gpt-4
+MAX_TOKENS=500
+TEMPERATURE=0.7
+```
+
+#### 前端 (.env)
+```bash
+VITE_API_URL=http://localhost:8001/api/v1/
+VITE_WS_URL=ws://localhost:8001/ws/
 ```
 
 ## 📝 版本歷史
 
-### v1.0.0 (當前版本)
+### v1.0.1 (當前版本)
+- 修復合併衝突
+- 優化 Docker 配置
+- 改進 Nginx 設置
+- 更新環境變數配置
+
+### v1.0.0
 - 完成核心功能實現
 - 支援化學家對話
 - 3D 場景展示
@@ -117,6 +156,9 @@ cp .env.example .env
 - [OpenAI](https://openai.com/) - 提供 AI 對話能力
 - [Three.js](https://threejs.org/) - 3D 渲染引擎
 - [Vue.js](https://vuejs.org/) - 前端框架
+- [Django](https://www.djangoproject.com/) - 後端框架
+- [Redis](https://redis.io/) - 緩存和消息隊列
+- [Celery](https://docs.celeryq.dev/) - 異步任務處理
 
 ## 📞 聯絡方式
 
