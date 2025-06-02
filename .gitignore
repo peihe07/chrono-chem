@@ -58,8 +58,8 @@ static/
 env/
 venv/
 ENV/
-!.env
-!.env.example
+.env
+.env.example
 
 # IDE 配置
 .vscode/*
