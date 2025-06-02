@@ -1,23 +1,26 @@
 version: '3.8'
 
 services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+    restart: always
+
   backend:
-    build:
-      context: ./backend
-      dockerfile: ../docker/backend/Dockerfile
+    build: ./backend
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-      - redis
-    networks:
-      - chronochem-network
-    ports:
-      - "8001:8001"
+    environment:
+      - NODE_ENV=production
+    restart: always
 
   celery:
     build:
@@ -71,13 +74,14 @@ services:
       - static_volume:/usr/share/nginx/static
       - media_volume:/usr/share/nginx/media
       - ./frontend/build:/usr/share/nginx/html
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
     networks:
       - chronochem-network
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:80"
+      - "8443:443"
     restart: unless-stopped
 
 volumes:
