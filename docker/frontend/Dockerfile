@@ -10,8 +10,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # 複製 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安裝依賴
-RUN npm ci --production
+# 安裝依賴（使用 npm install 替代 npm ci，並添加緩存）
+RUN npm install --prefer-offline --no-audit
 
 # 複製源代碼
 COPY . .
