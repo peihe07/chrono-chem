@@ -8,18 +8,9 @@
       <div class="footer-section">
         <h3>快速連結</h3>
         <ul>
-          <li><a href="/about">關於我們</a></li>
-          <li><a href="/contact">聯絡我們</a></li>
+          <li><a href="mailto:y450376@gmail.com">聯絡我們</a></li>
           <li><a href="/privacy">隱私政策</a></li>
         </ul>
-      </div>
-      <div class="footer-section">
-        <h3>社群媒體</h3>
-        <div class="social-links">
-          <a href="#" class="social-link" title="Facebook">📘</a>
-          <a href="#" class="social-link" title="Twitter">🐦</a>
-          <a href="#" class="social-link" title="Instagram">📸</a>
-        </div>
       </div>
     </div>
     <div class="footer-bottom">
@@ -47,7 +38,7 @@ const currentYear = computed(() => new Date().getFullYear());
   margin: 0 auto;
   padding: 0 2rem;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
 }
 
@@ -85,23 +76,6 @@ const currentYear = computed(() => new Date().getFullYear());
   text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
-.social-links {
-  display: flex;
-  gap: 1rem;
-}
-
-.social-link {
-  color: #2c5e2c;
-  font-size: 1.5rem;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.social-link:hover {
-  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
-  transform: translateY(-2px);
-}
-
 .footer-bottom {
   max-width: 1200px;
   margin: 2rem auto 0;
@@ -125,10 +99,6 @@ const currentYear = computed(() => new Date().getFullYear());
 
   .footer-section {
     text-align: center;
-  }
-
-  .social-links {
-    justify-content: center;
   }
 
   .footer-bottom {
