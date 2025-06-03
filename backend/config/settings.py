@@ -126,6 +126,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     'https://chronochem.uno',
+    'https://chrono-chem.vercel.app',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -159,6 +160,7 @@ CORS_ALLOW_ALL_ORIGINS = False  # 生產環境關閉
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
     'https://chronochem.uno',
+    'https://chrono-chem.vercel.app',
 ]
 
 # REST Framework settings
