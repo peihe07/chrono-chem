@@ -1,20 +1,6 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../docker/frontend/Dockerfile.prod
-    volumes:
-      - ./frontend/public/models:/app/public/models
-      - ./frontend/public/materials:/app/public/materials
-      - ./frontend/public/scenes:/app/public/scenes
-    environment:
-      - NODE_ENV=production
-      - VITE_API_URL=http://165.22.101.120:8001
-    networks:
-      - chronochem-network
-
   backend:
     build:
       context: ./backend
@@ -38,6 +24,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
+      - CORS_ALLOWED_ORIGINS=https://www.chronochem.uno,https://chrono-chem.vercel.app
     depends_on:
       - db
       - redis
@@ -115,11 +102,9 @@ services:
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
       - ./docker/nginx/ssl:/etc/nginx/ssl
-      - ./frontend/dist:/usr/share/nginx/html
       - ./backend/static:/usr/share/nginx/static
       - ./backend/media:/usr/share/nginx/media
     depends_on:
-      - frontend
       - backend
     networks:
       - chronochem-network

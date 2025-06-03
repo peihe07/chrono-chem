@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../docker/frontend/Dockerfile
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=production
-    restart: always
-
   backend:
     build: ./backend
     ports:
@@ -75,7 +62,6 @@ services:
       - ./docker/nginx/ssl:/etc/nginx/ssl
       - static_volume:/usr/share/nginx/static
       - media_volume:/usr/share/nginx/media
-      - ./frontend/build:/usr/share/nginx/html
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
