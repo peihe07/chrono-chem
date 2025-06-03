@@ -1,21 +1,54 @@
 # Build stage
-FROM python:3.11-slim as build
+FROM python:3.11-slim AS build
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn openai
 
 # Production stage
 FROM python:3.11-slim
 
 WORKDIR /app
 
+# 安裝必要的系統工具和 Python 包
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    python3-pip \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir gunicorn openai
+
+# 複製 Python 包
 COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
+
 COPY . .
+
+# 設置正確的權限
+RUN chown -R nobody:nogroup /app
+
+# 切換到非 root 用戶
+USER nobody
 
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8001
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "4"] 
+# 健康檢查
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD curl -f http://localhost:8001/api/v1/health/ || exit 1
+
+# 使用 python -m 方式啟動 gunicorn，添加更多配置選項
+CMD ["python", "-m", "gunicorn", \
+     "config.wsgi:application", \
+     "--bind", "0.0.0.0:8001", \
+     "--workers", "4", \
+     "--threads", "2", \
+     "--worker-class", "gthread", \
+     "--timeout", "120", \
+     "--keep-alive", "5", \
+     "--log-level", "info", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"] 

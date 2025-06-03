@@ -7,11 +7,12 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/backend/Dockerfile.prod
+    container_name: chronochem-backend
     ports:
       - "8001:8001"
     volumes:
-      - ./backend/media:/app/media
-      - ./backend/static:/app/static
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings
       - DJANGO_DEBUG=False
@@ -27,9 +28,12 @@ services:
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
       - CORS_ALLOWED_ORIGINS=https://www.chronochem.uno,https://chrono-chem.vercel.app
+    user: "0:0"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - chronochem-network
     healthcheck:
@@ -37,11 +41,25 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     env_file:
       - .env
     image: postgres:15-alpine
+    container_name: chronochem-db
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -55,9 +73,23 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
     image: redis:7-alpine
+    container_name: chronochem-redis
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -67,17 +99,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   celery:
-    env_file:
-      - .env
     build:
       context: ./backend
-      dockerfile: ../docker/backend/Dockerfile.prod
+      dockerfile: ../docker/backend/celery.Dockerfile
     command: celery -A config worker -l INFO
     volumes:
-      - ./backend/media:/app/media
-      - ./backend/static:/app/static
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings
       - DJANGO_DEBUG=False
@@ -88,36 +129,77 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
     depends_on:
-      - backend
-      - redis
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    user: "1000:1000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "config", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     networks:
       - chronochem-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   nginx:
     image: nginx:1.25-alpine
+    container_name: chronochem-nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
+      - static_volume:/usr/share/nginx/static/staticfiles
+      - media_volume:/usr/share/nginx/media
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
-      - ./docker/nginx/ssl:/etc/nginx/ssl
-      - ./backend/static:/usr/share/nginx/static
-      - ./backend/media:/usr/share/nginx/media
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - chronochem-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
   redis_data:
+  static_volume:
+  media_volume:
 
 networks:
   chronochem-network:

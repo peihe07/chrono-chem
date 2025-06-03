@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secret-key-here')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # SECURITY WARNING: update this in production!
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # 端口配置
 PORT = int(os.getenv('PORT', '8001'))
@@ -124,8 +124,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173').split(',')
+CORS_ALLOWED_ORIGINS = [
+    'https://chronochem.uno',
+    'https://www.chronochem.uno',
+    'https://chrono-chem.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -134,6 +142,7 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -145,9 +154,10 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
 CORS_EXPOSE_HEADERS = ['content-type', 'x-csrftoken']
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
-CORS_ALLOW_ALL_ORIGINS = True  # 開發環境使用，生產環境請關閉
+CORS_ALLOW_ALL_ORIGINS = False  # 生產環境關閉
 
 # REST Framework settings
 REST_FRAMEWORK = {
