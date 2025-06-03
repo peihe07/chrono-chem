@@ -163,20 +163,20 @@ services:
 
   nginx:
     image: nginx:1.25-alpine
-    container_name: chronochem-nginx
-    ports:
-      - "8080:80"
-      - "8443:443"
     volumes:
-      - static_volume:/usr/share/nginx/static/staticfiles
-      - media_volume:/usr/share/nginx/media
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - static_volume:/usr/share/nginx/static
+      - media_volume:/usr/share/nginx/media
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - chronochem-network
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
