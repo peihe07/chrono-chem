@@ -190,7 +190,7 @@ export class Scene {
 
       // 自動調整模型大小
       const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 3;  // 減小基礎目標大小
+      const targetSize = 5;  // 基礎目標大小
       const autoScale = targetSize / maxDim;
 
       // 設置模型位置和縮放

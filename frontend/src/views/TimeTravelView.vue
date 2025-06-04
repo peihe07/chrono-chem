@@ -1,6 +1,10 @@
 <template>
   <div class="time-travel-view">
     <div class="main-content">
+      <!-- 時間選擇器移到上方 -->
+      <div class="time-selector-container">
+        <TimeSelector v-model:currentEraId="currentEra" />
+      </div>
       <!-- 場景上方顯示科學家對話框，靠右 -->
       <div v-if="selectedChemist" class="chemist-dialog-top-right">
         <button class="toggle-btn" @click="isDialogCollapsed = !isDialogCollapsed">
@@ -14,9 +18,6 @@
         />
       </div>
       <div ref="container" class="scene-container"></div>
-    </div>
-    <div class="time-selector-container">
-      <TimeSelector v-model:currentEraId="currentEra" />
     </div>
     <!-- 載入狀態 -->
     <div v-if="isLoading" class="loading-overlay">
@@ -244,8 +245,6 @@ const loadEraModel = async (eraId: number) => {
   }
 };
 
-
-
 // 載入化學家數據
 
 // 添加化學家模型
@@ -311,46 +310,93 @@ function chemistSelectedHandler(e: Event) {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
 }
 
 .main-content {
   position: relative;
   padding: 0;
   margin: 0;
-  height: calc(100vh - 60px); /* 減去時間選擇器的高度 */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.time-selector-container {
+  position: relative;
+  width: 100%;
+  padding: 16px 24px;
+  margin: 0;
+  height: 75px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-container {
+  flex: 1;
+  width: calc(100% - 48px);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  margin: 0 24px 24px 24px;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.scene-container:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
 }
 
 .chemist-dialog-top-right {
   width: auto;
   max-width: 420px;
   position: absolute;
-  top: 24px;
-  right: 32px;
+  top: 100px;
+  right: 40px;
   z-index: 3000;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.scene-container {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 0;
-  box-shadow: none;
+.toggle-btn {
+  background: #fff;
+  color: #42b883;
+  border: 1px solid #42b883;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  z-index: 3100;
   position: relative;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  writing-mode: vertical-lr;
+  text-orientation: upright;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.time-selector-container {
-  position: relative;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  height: 60px;
+.toggle-btn:hover {
+  background: #42b883;
+  color: white;
+  transform: translateX(-2px);
+}
+
+/* 新增對話框容器樣式 */
+.chemist-dialog-top-right > :last-child {
+  margin-right: 80px;
+  margin-top: 20px;
 }
 
 .loading-overlay {
@@ -359,7 +405,8 @@ function chemistSelectedHandler(e: Event) {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -368,45 +415,43 @@ function chemistSelectedHandler(e: Event) {
 }
 
 .loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #42b883;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #42b883;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .loading-text {
-  margin-top: 1rem;
+  margin-top: 16px;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .error-toast {
   position: fixed;
-  top: 1rem;
+  top: 100px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 87, 87, 0.9);
+  background: rgba(255, 87, 87, 0.95);
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 87, 87, 0.3);
+  backdrop-filter: blur(4px);
 }
 
 .error-content {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .error-icon {
@@ -419,26 +464,17 @@ function chemistSelectedHandler(e: Event) {
   color: white;
   cursor: pointer;
   font-size: 1.2rem;
-  padding: 0 0.5rem;
+  padding: 0 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
 }
 
 .error-close:hover {
-  opacity: 0.8;
+  opacity: 1;
 }
 
-.toggle-btn {
-  background: #fff;
-  color: #42b883;
-  border: 1px solid #42b883;
-  border-radius: 6px 6px 0 0;
-  padding: 6px 16px;
-  cursor: pointer;
-  font-size: 1rem;
-  margin-bottom: 2px;
-  z-index: 3100;
-  position: relative;
-}
-.toggle-btn:hover {
-  background: #369870;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
