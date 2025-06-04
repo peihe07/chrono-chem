@@ -110,7 +110,7 @@ const navigateToEra = (eraId: number) => {
 <style scoped>
 .time-selector {
   position: relative;
-  background: rgba(240, 244, 240, 0.95);
+  background: rgba(60, 120, 60, 0.95);
   backdrop-filter: blur(10px);
   padding: 0.5rem 2rem;
   z-index: 1000;
@@ -120,9 +120,10 @@ const navigateToEra = (eraId: number) => {
   justify-content: space-between;
   width: 100%;
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 40px auto 0;
   gap: 1rem;
   border-top: 2px solid #2c5e2c;
+  border-radius: 12px;
 }
 
 .time-display {
@@ -136,12 +137,12 @@ const navigateToEra = (eraId: number) => {
 .year {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #2c5e2c;
+  color: #ffffff;
 }
 
 .era-title {
   font-size: 1rem;
-  color: #2c5e2c;
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -170,32 +171,27 @@ const navigateToEra = (eraId: number) => {
 }
 
 .marker-dot {
-  width: 6px;
-  height: 6px;
-  background: #ccc;
-  border-radius: 50%;
-  transition: all 0.3s ease;
+  display: none;
 }
 
 .time-marker.active .marker-dot {
-  background: #2c5e2c;
-  transform: scale(1.2);
+  display: none;
 }
 
 .marker-year {
   font-size: 1.1rem;
-  color: #666;
+  color: #ffffff;
   transition: all 0.3s ease;
   white-space: nowrap;
   padding: 2px 6px;
-  background: rgba(240, 244, 240, 0.9);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 
 .time-marker.active .marker-year {
-  color: #2c5e2c;
+  color: #ffffff;
   font-weight: 600;
-  background: rgba(44, 94, 44, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   font-size: 1.2rem;
 }
 
@@ -243,6 +239,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   gap: 0.2rem;
   white-space: nowrap;
+  color: #ffffff;
+}
+
+.nav-button:disabled {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .nav-icon {

@@ -358,8 +358,8 @@ function chemistSelectedHandler(e: Event) {
   width: auto;
   max-width: 420px;
   position: absolute;
-  top: 100px;
-  right: 40px;
+  top: 90px;
+  right: 20px;
   z-index: 3000;
   display: flex;
   flex-direction: row;
@@ -395,8 +395,8 @@ function chemistSelectedHandler(e: Event) {
 
 /* 新增對話框容器樣式 */
 .chemist-dialog-top-right > :last-child {
-  margin-right: 80px;
-  margin-top: 20px;
+  margin-right: 60px;
+  margin-top: 27px;
 }
 
 .loading-overlay {
