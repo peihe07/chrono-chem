@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="dialog-content">
+  <div v-if="show" class="dialog-container">
     <div class="dialog-header">
       <h2>{{ chemist.name }}</h2>
       <div class="header-actions">
@@ -223,7 +223,10 @@ const formatDescription = (desc: string) => {
 </script>
 
 <style scoped>
-.dialog-content {
+.dialog-container {
+  position: fixed !important;
+  top: 17vh !important;
+  right: 1vw !important;
   background: #f0f4f0;
   border: 2px solid #2c5e2c;
   border-radius: 4px;
@@ -237,13 +240,10 @@ const formatDescription = (desc: string) => {
   animation: dialogFadeIn 0.3s ease;
   font-family: 'Courier New', monospace;
   color: #2c5e2c;
-  position: fixed;
-  top: 17vh;
-  right: 1vw;
   z-index: 1000;
 }
 
-.dialog-content::before {
+.dialog-container::before {
   content: '';
   position: absolute;
   top: 0;
@@ -539,7 +539,7 @@ const formatDescription = (desc: string) => {
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .dialog-content {
+  .dialog-container {
     max-width: 95vw;
   }
 
@@ -572,7 +572,7 @@ const formatDescription = (desc: string) => {
 
 /* 自適應高度 */
 @media (max-height: 600px) {
-  .dialog-content {
+  .dialog-container {
     max-height: 95vh;
   }
 

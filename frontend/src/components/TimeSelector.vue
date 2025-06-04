@@ -120,10 +120,7 @@ const navigateToEra = (eraId: number) => {
   justify-content: space-between;
   width: 100%;
   max-width: 1400px;
-  margin: 40px auto 0;
-  gap: 1rem;
-  border-top: 2px solid #2c5e2c;
-  border-radius: 12px;
+  margin: 4rem auto 0;
 }
 
 .time-display {
