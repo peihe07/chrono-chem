@@ -350,18 +350,13 @@ const selectChemist = (chemist: Chemist) => {
   isDialogCollapsed.value = false;
 };
 
-function chemistSelectedHandler(e: Event) {
-  const customEvent = e as unknown as CustomEvent;
-  const chemistConfig = customEvent.detail;
-  // 用 scientists 列表找出完整 Chemist 物件（含 discoveries 等）
-  const chemist = scientists.value.find(c => c.id === chemistConfig.id);
-  if (chemist) {
-    selectChemist(chemist);
-  } else {
-    // 若找不到，直接用 config 也可
-    selectChemist(chemistConfig);
-  }
-}
+// 化學家選擇處理器
+const chemistSelectedHandler = (event: CustomEvent) => {
+  const chemist = event.detail;
+  selectedChemist.value = chemist;
+  isDialogCollapsed.value = true; // 確保對話框是收合的
+  // 移除自動展開對話框的邏輯
+};
 </script>
 
 <style scoped>

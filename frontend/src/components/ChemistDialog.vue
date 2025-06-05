@@ -190,7 +190,7 @@ watch(() => props.show, async (newValue) => {
 });
 
 // 監聽 isCollapsed prop 的變化
-watch(() => props.isCollapsed, (newValue) => {
+watch(() => props.isCollapsed, async (newValue) => {
   // 當 prop 變化時，確保內容正確顯示
   nextTick(() => {
     const dialogContent = document.querySelector('.dialog-content') as HTMLElement;
@@ -198,6 +198,12 @@ watch(() => props.isCollapsed, (newValue) => {
       dialogContent.style.display = newValue ? 'none' : 'flex';
     }
   });
+
+  // 當對話框展開時，載入聊天記錄並添加歡迎訊息
+  if (!newValue) {
+    await loadChatHistory();
+    addWelcomeMessage();
+  }
 });
 
 // 組件掛載時添加滾動監聽
