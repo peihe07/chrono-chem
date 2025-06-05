@@ -7,13 +7,14 @@
       </div>
       <!-- 場景上方顯示科學家對話框，靠右 -->
       <div v-if="selectedChemist" class="chemist-dialog-top-right">
-        <button class="toggle-btn" @click="isDialogCollapsed = !isDialogCollapsed">
+        <button class="toggle-btn" @click="toggleDialog">
           {{ isDialogCollapsed ? '展開對話' : '收合對話' }}
         </button>
         <ChemistDialog
-          v-if="!isDialogCollapsed"
+          v-show="!isDialogCollapsed"
           :show="true"
           :chemist="selectedChemist"
+          :is-collapsed="isDialogCollapsed"
           @close="closeChemistDialog"
         />
       </div>
@@ -36,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as THREE from 'three';
 import { Scene } from '@/threejs/scene';
 import { eras } from '@/config/eras';
@@ -71,6 +72,16 @@ const error = ref<string>('');
 const showChemistDialog = ref<boolean>(false);
 const selectedChemist = ref<Chemist | null>(null);
 const isDialogCollapsed = ref(false);
+
+// 處理滾動事件
+const handleScroll = () => {
+  isDialogCollapsed.value = true;
+};
+
+// 切換對話框狀態
+const toggleDialog = () => {
+  isDialogCollapsed.value = !isDialogCollapsed.value;
+};
 
 // 全局錯誤處理
 const handleError = (err: unknown, context: string) => {
@@ -255,6 +266,7 @@ onMounted(async () => {
     console.log('組件已掛載，開始初始化場景');
     await loadEraModel(currentEra.value);
     window.addEventListener('chemist-selected', chemistSelectedHandler as unknown as EventListener);
+    window.addEventListener('scroll', handleScroll);
     // 自動顯示第一位化學家對話框
     if (scientists.value.length > 0) {
       const firstChemist = scientists.value[0];
@@ -276,6 +288,7 @@ onUnmounted(() => {
     scene = null;
   }
   window.removeEventListener('chemist-selected', chemistSelectedHandler as unknown as EventListener);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 // 化學家對話框相關
@@ -290,6 +303,7 @@ const selectChemist = (chemist: Chemist) => {
   showChemistDialog.value = true;
   isDialogCollapsed.value = false;
 };
+
 function chemistSelectedHandler(e: Event) {
   const customEvent = e as unknown as CustomEvent;
   const chemistConfig = customEvent.detail;
@@ -356,7 +370,7 @@ function chemistSelectedHandler(e: Event) {
 
 .chemist-dialog-top-right {
   width: auto;
-  max-width: 420px;
+  max-width: 580px;
   position: absolute;
   top: 90px;
   right: 20px;
@@ -397,6 +411,7 @@ function chemistSelectedHandler(e: Event) {
 .chemist-dialog-top-right > :last-child {
   margin-right: 60px;
   margin-top: 27px;
+  margin-left: 20px;
 }
 
 .loading-overlay {

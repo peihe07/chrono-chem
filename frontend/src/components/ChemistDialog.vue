@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="dialog-container">
+  <div v-if="show" class="dialog-container" :class="{ 'collapsed': isCollapsed }">
     <div class="dialog-header">
       <h2>{{ chemist.name }}</h2>
       <div class="header-actions">
@@ -9,7 +9,7 @@
         <button class="close-button" @click="close">×</button>
       </div>
     </div>
-    <div class="dialog-body">
+    <div class="dialog-content" v-show="!isCollapsed">
       <div class="chemist-portrait">
         <img :src="chemist.portrait_path" :alt="chemist.name">
       </div>
@@ -28,7 +28,7 @@
     </div>
     
     <!-- 對話區域 -->
-    <div class="chat-section">
+    <div class="chat-section" v-show="!isCollapsed">
       <div class="chat-messages" ref="messagesContainer">
         <div 
           v-for="(message, index) in messages" 
@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { defineProps, defineEmits } from 'vue';
 import type { Chemist } from '@/types/index';
 import { sendMessage as sendChatMessage, getChatHistory, clearChatHistory } from '@/api/chemists';
@@ -66,6 +66,7 @@ import type { ChatMessage } from '@/api/chemists';
 const props = defineProps<{
   show: boolean;
   chemist: Chemist;
+  isCollapsed: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -76,6 +77,10 @@ const userInput = ref('');
 const messages = ref<ChatMessage[]>([]);
 const isLoading = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
+const isScrolling = ref(false);
+const scrollTimeout = ref<number | null>(null);
+const dialogPosition = ref(0);
+const dialogHeight = ref(0);
 
 // 格式化時間戳
 const formatTime = (timestamp: string | number) => {
@@ -137,6 +142,28 @@ const scrollToBottom = () => {
   }
 };
 
+// 計算對話框位置
+const calculateDialogPosition = () => {
+  const dialogElement = document.querySelector('.dialog-container');
+  if (dialogElement) {
+    const rect = dialogElement.getBoundingClientRect();
+    dialogPosition.value = rect.top + window.scrollY;
+    dialogHeight.value = rect.height;
+  }
+};
+
+// 處理滾動事件
+const handleScroll = () => {
+  if (!props.isCollapsed) {
+    nextTick(() => {
+      const dialogContent = document.querySelector('.dialog-content') as HTMLElement;
+      if (dialogContent) {
+        dialogContent.style.display = 'none';
+      }
+    });
+  }
+};
+
 // 監聽化學家 ID 變動，切換時重載聊天紀錄
 watch(() => props.chemist.id, async (newId, oldId) => {
   messages.value = [];
@@ -149,18 +176,53 @@ watch(() => props.chemist.id, async (newId, oldId) => {
 // 監聽對話框顯示狀態
 watch(() => props.show, async (newValue) => {
   if (newValue) {
+    if (props.isCollapsed) {
+      nextTick(() => {
+        const dialogContent = document.querySelector('.dialog-content') as HTMLElement;
+        if (dialogContent) {
+          dialogContent.style.display = 'flex';
+        }
+      });
+    }
     await loadChatHistory();
     addWelcomeMessage();
   }
 });
 
-// 組件掛載時初始化
-onMounted(async () => {
+// 監聽 isCollapsed prop 的變化
+watch(() => props.isCollapsed, (newValue) => {
+  // 當 prop 變化時，確保內容正確顯示
+  nextTick(() => {
+    const dialogContent = document.querySelector('.dialog-content') as HTMLElement;
+    if (dialogContent) {
+      dialogContent.style.display = newValue ? 'none' : 'flex';
+    }
+  });
+});
+
+// 組件掛載時添加滾動監聽
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+  // 等待 DOM 更新後計算位置
+  nextTick(() => {
+    calculateDialogPosition();
+  });
   if (props.show) {
-    await loadChatHistory();
+    loadChatHistory();
     addWelcomeMessage();
   }
 });
+
+// 組件卸載時移除滾動監聽
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+  if (scrollTimeout.value) {
+    clearTimeout(scrollTimeout.value);
+  }
+});
+
+// 監聽視窗大小變化，重新計算位置
+window.addEventListener('resize', calculateDialogPosition);
 
 // 發送訊息
 const sendMessage = async () => {
@@ -229,10 +291,10 @@ const formatDescription = (desc: string) => {
   right: 1vw !important;
   background: #f0f4f0;
   border: 2px solid #2c5e2c;
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(44, 94, 44, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(44, 94, 44, 0.15);
   width: 100%;
-  max-width: 480px;
+  max-width: 580px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -241,33 +303,22 @@ const formatDescription = (desc: string) => {
   font-family: 'Courier New', monospace;
   color: #2c5e2c;
   z-index: 1000;
+  transform: scale(1);
+  transform-origin: top right;
+  transition: all 0.3s ease;
 }
 
-.dialog-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(44, 94, 44, 0.03) 0px,
-    rgba(44, 94, 44, 0.03) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-  pointer-events: none;
-  animation: scanline 8s linear infinite;
+.dialog-container.collapsed {
+  max-height: 60px;
 }
 
 .dialog-header {
   padding: 12px 20px;
-  border-bottom: 1px solid #2c5e2c;
+  border-bottom: 1px solid rgba(44, 94, 44, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(44, 94, 44, 0.1);
+  background: rgba(44, 94, 44, 0.05);
 }
 
 .dialog-header h2 {
@@ -298,27 +349,48 @@ const formatDescription = (desc: string) => {
   text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
+.dialog-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.dialog-container.collapsed .dialog-content {
+  opacity: 0;
+  display: none;
+}
+
 .dialog-body {
-  padding: 16px;
+  padding: 16px 0;
   overflow-y: auto;
   display: flex;
-  flex-direction: row;
-  gap: 16px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   max-height: 35vh;
-  align-items: flex-start;
-  background: rgba(240, 244, 240, 0.8);
+  background: transparent;
+  border-bottom: 1px solid rgba(44, 94, 44, 0.1);
+  margin-bottom: 16px;
+  width: 100%;
 }
 
 .chemist-portrait {
   width: 80px;
   height: 80px;
-  margin: 0;
-  border-radius: 4px;
+  margin: 0 auto;
+  border-radius: 50%;
   overflow: hidden;
-  border: 2px solid #2c5e2c;
+  border: 2px solid rgba(44, 94, 44, 0.3);
   background: #fff;
   flex-shrink: 0;
   filter: sepia(30%) saturate(150%);
+  box-shadow: 0 2px 8px rgba(44, 94, 44, 0.1);
+  display: block;
 }
 
 .chemist-portrait img {
@@ -330,69 +402,74 @@ const formatDescription = (desc: string) => {
 }
 
 .chemist-details {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  padding: 4px 0;
+  text-align: left;
 }
 
 .chemist-years {
-  font-size: 0.9rem;
-  color: #2c5e2c;
-  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: rgba(44, 94, 44, 0.8);
+  margin-bottom: 4px;
   font-weight: 500;
-  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
+  text-align: left;
 }
 
 .chemist-description {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   line-height: 1.5;
-  color: #2c5e2c;
-  margin: 8px 0;
+  color: rgba(44, 94, 44, 0.9);
+  margin: 4px 0;
   text-align: left;
 }
 
 .chemist-discoveries {
-  margin-top: 24px;
-  padding: 16px;
-  background: rgba(44, 94, 44, 0.1);
-  border: 1px solid #2c5e2c;
-  border-radius: 4px;
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(44, 94, 44, 0.05);
+  border: 1px solid rgba(44, 94, 44, 0.1);
+  border-radius: 8px;
+  text-align: left;
 }
 
 .chemist-discoveries h3 {
-  font-size: 1.2rem;
-  color: #2c5e2c;
-  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: rgba(44, 94, 44, 0.9);
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
-  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
 }
 
 .chemist-discoveries h3::before {
   content: ">";
-  color: #2c5e2c;
-  font-size: 1.5rem;
+  color: rgba(44, 94, 44, 0.6);
+  font-size: 1.2rem;
 }
 
 .chemist-discoveries ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  text-align: left;
 }
 
 .chemist-discoveries li {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(44, 94, 44, 0.2);
-  color: #2c5e2c;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(44, 94, 44, 0.1);
+  color: rgba(44, 94, 44, 0.8);
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.8rem;
+  justify-content: flex-start;
 }
 
 .chemist-discoveries li::before {
   content: ">";
-  color: #2c5e2c;
-  font-size: 1.2rem;
+  color: rgba(44, 94, 44, 0.5);
+  font-size: 1rem;
 }
 
 .chemist-discoveries li:last-child {
@@ -408,12 +485,13 @@ const formatDescription = (desc: string) => {
   background: rgba(240, 244, 240, 0.8);
   min-height: 250px;
   margin-top: 8px;
+  padding: 0 24px;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 16px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -424,6 +502,9 @@ const formatDescription = (desc: string) => {
   max-width: 80%;
   align-self: flex-start;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .message.user-message {
@@ -432,53 +513,47 @@ const formatDescription = (desc: string) => {
 
 .message-content {
   padding: 12px 16px;
-  border-radius: 4px;
+  border-radius: 16px;
   background: rgba(44, 94, 44, 0.1);
-  border: 1px solid #2c5e2c;
+  border: 1px solid rgba(44, 94, 44, 0.2);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #2c5e2c;
   position: relative;
+  box-shadow: 0 2px 4px rgba(44, 94, 44, 0.1);
+  animation: typing 0.3s ease-out;
 }
 
-.message-content::before {
-  content: ">";
-  position: absolute;
-  left: -20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #2c5e2c;
-  opacity: 0.5;
-}
-
-.user-message .message-content {
-  background: rgba(44, 94, 44, 0.2);
-  border: 1px solid #2c5e2c;
+.message.user-message .message-content {
+  background: rgba(44, 94, 44, 0.15);
+  border: 1px solid rgba(44, 94, 44, 0.3);
   color: #2c5e2c;
 }
 
 .message-time {
-  font-size: 0.8rem;
-  color: rgba(44, 94, 44, 0.7);
-  margin-top: 4px;
+  font-size: 0.75rem;
+  color: rgba(44, 94, 44, 0.6);
+  margin-top: 2px;
   text-align: right;
+  padding: 0 4px;
 }
 
 .chat-input {
-  padding: 16px;
-  background: rgba(240, 244, 240, 0.9);
-  border-top: 1px solid #2c5e2c;
+  padding: 16px 0;
+  background: rgba(240, 244, 240, 0.95);
+  border-top: 1px solid rgba(44, 94, 44, 0.2);
   display: flex;
   gap: 12px;
+  position: relative;
 }
 
 .chat-input input {
   flex: 1;
-  padding: 12px;
-  border: 1px solid #2c5e2c;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border: 1px solid rgba(44, 94, 44, 0.3);
+  border-radius: 24px;
   font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   color: #2c5e2c;
   font-family: 'Courier New', monospace;
   transition: all 0.3s ease;
@@ -486,7 +561,8 @@ const formatDescription = (desc: string) => {
 
 .chat-input input:focus {
   outline: none;
-  box-shadow: 0 0 10px rgba(44, 94, 44, 0.3);
+  box-shadow: 0 0 0 2px rgba(44, 94, 44, 0.2);
+  border-color: rgba(44, 94, 44, 0.5);
 }
 
 .chat-input input::placeholder {
@@ -497,8 +573,8 @@ const formatDescription = (desc: string) => {
   padding: 12px 24px;
   background: rgba(44, 94, 44, 0.1);
   color: #2c5e2c;
-  border: 1px solid #2c5e2c;
-  border-radius: 4px;
+  border: 1px solid rgba(44, 94, 44, 0.3);
+  border-radius: 24px;
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -507,7 +583,8 @@ const formatDescription = (desc: string) => {
 
 .chat-input button:hover:not(:disabled) {
   background: rgba(44, 94, 44, 0.2);
-  text-shadow: 0 0 5px rgba(44, 94, 44, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(44, 94, 44, 0.2);
 }
 
 .chat-input button:disabled {
@@ -624,5 +701,10 @@ const formatDescription = (desc: string) => {
 
 .icon {
   font-size: 1.2rem;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
 }
 </style> 
