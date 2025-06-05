@@ -36,14 +36,14 @@ export const eras: EraConfig[] = [
     modelPath: '/models/mendeleev_study.glb',
     modelScale: { x: 50.0, y: 50.0, z: 50.0 },
     cameraPosition: { 
-      x: 2,       // 保持在正中間
-      y: 30.0,     // 進一步降低視角高度
-      z: 6        // 更靠近書房
+      x: 800,       // 改為負值，旋轉視角 180 度
+      y: 700.0,     // 保持視角高度
+      z: -150        // 保持當前 z 值
     },
     cameraTarget: {
-      x: 0,
+      x: 30,
       y: 30.0,     // 保持視點高度
-      z: 0        // 看向書房中心
+      z: -10      // 看向書房中心
     }
   },
   {
