@@ -8,13 +8,48 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AIService:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(AIService, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        logger.info("初始化 AIService")
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.MODEL_NAME
-        self.max_tokens = settings.MAX_TOKENS
-        self.temperature = settings.TEMPERATURE
-        
+        if not self._initialized:
+            logger.info("初始化 AIService")
+            try:
+                self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                self.model = settings.MODEL_NAME
+                self.max_tokens = settings.MAX_TOKENS
+                self.temperature = settings.TEMPERATURE
+                
+                # 測試 API 連接
+                self._test_connection()
+                logger.info("OpenAI API 連接成功")
+                self._initialized = True
+            except Exception as e:
+                logger.error(f"OpenAI API 初始化失敗: {str(e)}")
+                logger.error(f"錯誤詳情: {traceback.format_exc()}")
+                raise
+
+    def _test_connection(self):
+        """測試 OpenAI API 連接"""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "你是一個測試助手。"},
+                    {"role": "user", "content": "測試連接"}
+                ],
+                max_tokens=10
+            )
+            return response
+        except Exception as e:
+            logger.error(f"API 連接測試失敗: {str(e)}")
+            raise
+
     def _get_chemist_prompt(self, chemist: Chemist) -> str:
         """生成化學家的系統提示詞"""
         return f"""你現在扮演{chemist.name}（{chemist.birth_year}-{chemist.death_year}）。

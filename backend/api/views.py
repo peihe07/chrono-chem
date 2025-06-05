@@ -10,6 +10,10 @@ from .serializers import (
 )
 from rest_framework.decorators import api_view
 from .services.ai_service import AIService
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 class HealthCheck(APIView):
     """
@@ -84,28 +88,28 @@ class SendMessage(generics.CreateAPIView):
         
         try:
             chemist = get_object_or_404(Chemist, id=chemist_id)
-        
-        # 創建用戶消息
-        user_message = ChatHistory.objects.create(
+            
+            # 創建用戶消息
+            user_message = ChatHistory.objects.create(
                 chemist=chemist,
-            role='user',
+                role='user',
                 content=message,
-            timestamp=timezone.now()
-        )
-        
-            # 使用 AI 服務生成回應
+                timestamp=timezone.now()
+            )
+            
+            # 使用已初始化的 AIService 實例
             ai_service = AIService()
             ai_response = ai_service.generate_response(chemist, message)
             
             # 創建 AI 回應
-        assistant_message = ChatHistory.objects.create(
+            assistant_message = ChatHistory.objects.create(
                 chemist=chemist,
-            role='assistant',
+                role='assistant',
                 content=ai_response,
-            timestamp=timezone.now()
-        )
-        
-        return Response({
+                timestamp=timezone.now()
+            )
+            
+            return Response({
                 'status': 'success',
                 'data': {
                     'assistant_message': {
@@ -118,7 +122,8 @@ class SendMessage(generics.CreateAPIView):
             })
             
         except Exception as e:
-            print(f"發送訊息失敗: {str(e)}")
+            logger.error(f"發送訊息失敗: {str(e)}")
+            logger.error(f"錯誤詳情: {traceback.format_exc()}")
             return Response({
                 'status': 'error',
                 'message': f'發送訊息失敗: {str(e)}'
