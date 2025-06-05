@@ -244,15 +244,19 @@ const loadEraModel = async (eraId: number) => {
       return chemist && chemist.era === eraId;
     });
     
+    // 載入完畢後立即顯示第一位化學家對話框
+    if (scientists.value.length > 0) {
+      const firstChemist = scientists.value[0];
+      if (firstChemist) {
+        selectChemist(firstChemist);
+        isDialogCollapsed.value = false;
+      }
+    }
   } catch (modelError) {
     console.error('模型載入失敗:', modelError);
     handleError(modelError, '模型載入');
   } finally {
     isLoading.value = false;
-    // 載入完畢自動顯示第一位化學家對話框
-    if (scientists.value[0]) {
-      selectChemist(scientists.value[0]);
-    }
   }
 };
 
@@ -267,13 +271,6 @@ onMounted(async () => {
     await loadEraModel(currentEra.value);
     window.addEventListener('chemist-selected', chemistSelectedHandler as unknown as EventListener);
     window.addEventListener('scroll', handleScroll);
-    // 自動顯示第一位化學家對話框
-    if (scientists.value.length > 0) {
-      const firstChemist = scientists.value[0];
-      if (firstChemist) {
-        selectChemist(firstChemist);
-      }
-    }
   } catch (error) {
     console.error('初始化失敗:', error);
     handleError(error, '初始化');
